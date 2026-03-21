@@ -21,10 +21,10 @@ jobs:
         with:
           version: 9
 
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -84,7 +84,7 @@ jobs:
             SENTRY_PROJECT=${{ secrets.SENTRY_PROJECT }}
 
       - name: Install Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@4.33.0
 
       - name: Deploy to staging
         env:
@@ -101,6 +101,18 @@ jobs:
       packages: write
 
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Determine SHA to promote
+        id: sha
+        run: |
+          # For a merge commit, HEAD^2 is the staging tip; for fast-forward, use HEAD
+          SHA=$(git rev-parse --short HEAD^2 2>/dev/null || git rev-parse --short HEAD)
+          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          echo "Promoting image with SHA: $SHA"
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -111,13 +123,14 @@ jobs:
       - name: Promote staging image to latest
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          SHA: ${{ steps.sha.outputs.sha }}
         run: |
-          docker pull $IMAGE:staging
-          docker tag $IMAGE:staging $IMAGE:latest
+          docker pull $IMAGE:$SHA
+          docker tag $IMAGE:$SHA $IMAGE:latest
           docker push $IMAGE:latest
 
       - name: Install Railway CLI
-        run: npm install -g @railway/cli
+        run: npm install -g @railway/cli@4.33.0
 
       - name: Deploy to production
         env:

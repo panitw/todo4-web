@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "todo-server",
+  title: "todo4",
   description: "AI-native task management",
 };
 

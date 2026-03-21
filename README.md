@@ -2,7 +2,7 @@
 
 ## Description
 
-The web frontend for the todo-server platform. Built with Next.js 16 and React 19. Calls `todo-api` directly for all data. Provides the human oversight and management interface.
+The web frontend for the todo4 platform. Built with Next.js 16 and React 19. Calls `todo-api` directly for all data. Provides the human oversight and management interface.
 
 > **Package manager:** This project uses **pnpm**. Do **NOT** use `npm install` or `npm ci` — use `pnpm install` instead.
 

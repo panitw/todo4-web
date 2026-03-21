@@ -1,5 +1,7 @@
 # todo-web
 
+## Description
+
 The web frontend for the todo-server platform. Built with Next.js 16 and React 19. Calls `todo-api` directly for all data. Provides the human oversight and management interface.
 
 > **Package manager:** This project uses **pnpm**. Do **NOT** use `npm install` or `npm ci` — use `pnpm install` instead.
@@ -26,6 +28,8 @@ pnpm dev
 
 > **Port conflict:** Next.js defaults to port `3000`, which conflicts with `todo-api`. The `.env.local` file already sets `PORT=3002` — just use `pnpm dev` as-is.
 
+Visit `http://localhost:3002` in your browser to verify the app loads with no errors.
+
 ## Environment Variables
 
 | Variable | Default | Required | Description |
@@ -44,6 +48,10 @@ pnpm dev
 | `pnpm build` | Build for production |
 | `pnpm start` | Start production build |
 | `pnpm lint` | Run ESLint |
+
+## Testing
+
+Unit tests are configured in Story 2.x. No test commands are available yet.
 
 ## CI/CD Setup
 

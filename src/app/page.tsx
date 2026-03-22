@@ -1,7 +1,7 @@
+import { redirect } from 'next/navigation';
+
 export default function Home() {
-  return (
-    <main>
-      <h1>todo4</h1>
-    </main>
-  )
+  // Redirect authenticated users to the tasks page.
+  // Unauthenticated users are handled by auth middleware or the tasks page itself.
+  redirect('/tasks');
 }

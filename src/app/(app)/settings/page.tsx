@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -71,14 +71,6 @@ function ProfileSection({ profile }: { profile: UserProfile | undefined }) {
   const [timezone, setTimezone] = useState(profile?.timezone ?? 'UTC');
   const [email, setEmail] = useState(profile?.email ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (profile) {
-      setName(profile.name ?? '');
-      setTimezone(profile.timezone);
-      setEmail(profile.email);
-    }
-  }, [profile]);
 
   const mutation = useMutation({
     mutationFn: updateProfile,
@@ -341,7 +333,7 @@ export default function SettingsPage() {
       }
       middle={
         activeSection === 'profile' ? (
-          <ProfileSection profile={profile} />
+          <ProfileSection key={profile?.id} profile={profile} />
         ) : (
           <SecuritySection profile={profile} />
         )

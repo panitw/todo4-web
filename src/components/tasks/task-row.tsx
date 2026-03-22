@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 interface TaskRowProps {
   task: Task;
   selected: boolean;
+  highlighted?: boolean;
   onSelect: (id: string) => void;
 }
 
@@ -38,7 +39,7 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function TaskRow({ task, selected, onSelect }: TaskRowProps) {
+export function TaskRow({ task, selected, highlighted, onSelect }: TaskRowProps) {
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG['p4'];
   const overdue = isOverdue(task);
   const completed = task.status === 'closed';
@@ -61,7 +62,7 @@ export function TaskRow({ task, selected, onSelect }: TaskRowProps) {
       className={cn(
         'group flex items-center gap-2 px-3 min-h-[48px] md:min-h-[36px] cursor-pointer',
         'border-l-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500',
-        selected ? 'bg-indigo-50' : 'hover:bg-muted/50',
+        selected ? 'bg-indigo-50' : highlighted ? 'bg-green-50' : 'hover:bg-muted/50',
         hasAgentTouch ? 'border-teal-500' : 'border-transparent',
         completed && 'opacity-60',
       )}

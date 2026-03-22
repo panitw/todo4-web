@@ -13,7 +13,7 @@ interface FilterChipBarProps {
   onChange: (filters: TaskFilters) => void;
 }
 
-const DEFAULT_PRIORITY: TaskFilters['priority'] = ['p1', 'p2'];
+const DEFAULT_PRIORITY: TaskFilters['priority'] = [];
 
 const PRIORITIES: { value: 'p1' | 'p2' | 'p3' | 'p4'; label: string }[] = [
   { value: 'p1', label: 'P1' },

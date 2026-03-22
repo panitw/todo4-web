@@ -6,6 +6,8 @@ import { ThreeColumnShell } from '@/components/layout/three-column-shell';
 import { AppLeftNav } from '@/components/shared/app-left-nav';
 import { TaskRow } from '@/components/tasks/task-row';
 import { FilterChipBar, type TaskFilters } from '@/components/tasks/filter-chip-bar';
+import { QuickAddBar } from '@/components/tasks/quick-add-bar';
+import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
 import { useTasks } from '@/hooks/use-tasks';
 import type { Task } from '@/lib/api/tasks';
 
@@ -23,10 +25,12 @@ function TaskRowSkeleton() {
 function VirtualTaskList({
   tasks,
   selectedTaskId,
+  highlightedTaskId,
   onSelect,
 }: {
   tasks: Task[];
   selectedTaskId: string | null;
+  highlightedTaskId: string | null;
   onSelect: (id: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -67,6 +71,7 @@ function VirtualTaskList({
               <TaskRow
                 task={task}
                 selected={task.id === selectedTaskId}
+                highlighted={task.id === highlightedTaskId}
                 onSelect={onSelect}
               />
             </div>
@@ -80,10 +85,17 @@ function VirtualTaskList({
 export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFilters>({
-    priority: ['p1', 'p2'],
+    priority: [],
     status: [],
   });
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
+  const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
+  const [newTaskId, setNewTaskId] = useState<string | null>(null);
+
+  function handleTaskCreated(taskId: string) {
+    setNewTaskId(taskId);
+    setTimeout(() => setNewTaskId(null), 1500);
+  }
 
   const { data, isPending } = useTasks({
     priority: filters.priority,
@@ -109,6 +121,14 @@ export default function TasksPage() {
 
   const middle = (
     <div className="flex flex-col h-full">
+      {/* Quick add bar — sticky above filter chips */}
+      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-2">
+        <QuickAddBar
+          onOpenFullForm={() => setIsCreationDialogOpen(true)}
+          onTaskCreated={handleTaskCreated}
+        />
+      </div>
+
       {/* Filter chip bar */}
       <FilterChipBar filters={filters} onChange={setFilters} />
 
@@ -134,6 +154,7 @@ export default function TasksPage() {
         <VirtualTaskList
           tasks={tasks}
           selectedTaskId={selectedTaskId}
+          highlightedTaskId={newTaskId}
           onSelect={handleSelectTask}
         />
       )}
@@ -158,13 +179,20 @@ export default function TasksPage() {
   );
 
   return (
-    <ThreeColumnShell
-      leftNav={leftNav}
-      middle={middle}
-      right={right}
-      isRightPanelOpen={effectiveRightPanelOpen}
-      onRightPanelOpenChange={setIsRightPanelOpen}
-      sheetTitle={selectedTask?.title ?? 'Task Details'}
-    />
+    <>
+      <ThreeColumnShell
+        leftNav={leftNav}
+        middle={middle}
+        right={right}
+        isRightPanelOpen={effectiveRightPanelOpen}
+        onRightPanelOpenChange={setIsRightPanelOpen}
+        sheetTitle={selectedTask?.title ?? 'Task Details'}
+      />
+      <TaskCreationDialog
+        open={isCreationDialogOpen}
+        onOpenChange={setIsCreationDialogOpen}
+        onTaskCreated={handleTaskCreated}
+      />
+    </>
   );
 }

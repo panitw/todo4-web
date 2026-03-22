@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -9,16 +10,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
   getProfile,
   updateProfile,
   getOAuthProviders,
   disconnectOAuthProvider,
   changePassword,
+  deleteAccount,
+  cancelDeletion,
   type UserProfile,
   type OAuthProvider,
 } from '@/lib/api/users';
 
-type Section = 'profile' | 'security';
+type Section = 'profile' | 'security' | 'account';
 
 interface ApiError extends Error {
   code?: string;
@@ -38,6 +52,7 @@ function SettingsNav({
   const items: { key: Section; label: string }[] = [
     { key: 'profile', label: 'Profile' },
     { key: 'security', label: 'Security' },
+    { key: 'account', label: 'Account' },
   ];
 
   return (
@@ -315,6 +330,130 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Account section (Danger Zone)
+// ──────────────────────────────────────────────────────────────────────────────
+
+function AccountSection({ profile }: { profile: UserProfile | undefined }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
+
+  const hasPendingDeletion = !!profile?.deletionScheduledAt;
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => deleteAccount(passwordRef.current?.value || undefined),
+    onSuccess: () => {
+      void queryClient.clear();
+      router.push('/login');
+    },
+    onError: (err: ApiError) => {
+      if (err.code === 'invalid_credentials') {
+        toast.error('Password verification failed. Please try again.');
+      } else {
+        toast.error(err.message ?? 'Failed to delete account');
+      }
+      setOpen(false);
+    },
+  });
+
+  const cancelDeletionMutation = useMutation({
+    mutationFn: cancelDeletion,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success('Account deletion cancelled.');
+    },
+    onError: (err: ApiError) => {
+      toast.error(err.message ?? 'Failed to cancel deletion');
+    },
+  });
+
+  return (
+    <section className="p-6 space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold mb-1">Account</h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Manage your account settings.
+        </p>
+      </div>
+
+      <div className="border border-destructive/50 rounded-lg p-4 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-destructive">Danger Zone</h3>
+        </div>
+
+        {hasPendingDeletion ? (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Your account is scheduled for deletion on{' '}
+              <span className="font-medium text-foreground">
+                {new Date(profile!.deletionScheduledAt!).toLocaleDateString()}
+              </span>
+              . All your data will be permanently removed at that time.
+            </p>
+            <Button
+              variant="outline"
+              disabled={cancelDeletionMutation.isPending}
+              onClick={() => cancelDeletionMutation.mutate()}
+            >
+              {cancelDeletionMutation.isPending ? 'Cancelling…' : 'Cancel Deletion'}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Delete your account</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Schedules permanent deletion in 30 days. You can cancel within this period.
+              </p>
+            </div>
+            <AlertDialog open={open} onOpenChange={setOpen}>
+              <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
+                Delete Account
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This schedules permanent deletion in 30 days. All tasks, agents, and data
+                    will be removed. You can cancel within 30 days.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {profile?.hasPassword && (
+                  <div className="py-2">
+                    <label className="text-sm font-medium" htmlFor="delete-confirm-password">
+                      Confirm with your password
+                    </label>
+                    <Input
+                      id="delete-confirm-password"
+                      type="password"
+                      ref={passwordRef}
+                      className="mt-1"
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                    />
+                  </div>
+                )}
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    disabled={deleteAccountMutation.isPending}
+                    onClick={() => deleteAccountMutation.mutate()}
+                  >
+                    {deleteAccountMutation.isPending ? 'Deleting…' : 'Delete Account'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Settings page
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -326,18 +465,18 @@ export default function SettingsPage() {
     queryFn: getProfile,
   });
 
+  function renderSection() {
+    if (activeSection === 'profile') return <ProfileSection key={profile?.id} profile={profile} />;
+    if (activeSection === 'security') return <SecuritySection profile={profile} />;
+    return <AccountSection profile={profile} />;
+  }
+
   return (
     <ThreeColumnShell
       leftNav={
         <SettingsNav active={activeSection} onChange={setActiveSection} />
       }
-      middle={
-        activeSection === 'profile' ? (
-          <ProfileSection key={profile?.id} profile={profile} />
-        ) : (
-          <SecuritySection profile={profile} />
-        )
-      }
+      middle={renderSection()}
     />
   );
 }

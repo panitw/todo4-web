@@ -8,6 +8,7 @@ export interface UserProfile {
   emailVerified: boolean;
   hasPassword: boolean;
   pendingEmail: string | null;
+  deletionScheduledAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -96,5 +97,18 @@ export async function changePassword(data: ChangePasswordInput): Promise<void> {
   await apiFetch<{ message: string }>('/users/me/change-password', {
     method: 'POST',
     body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAccount(password?: string): Promise<void> {
+  await apiFetch<{ message: string }>('/users/me', {
+    method: 'DELETE',
+    body: JSON.stringify(password !== undefined ? { password } : {}),
+  });
+}
+
+export async function cancelDeletion(): Promise<void> {
+  await apiFetch<{ message: string }>('/users/me/cancel-deletion', {
+    method: 'POST',
   });
 }

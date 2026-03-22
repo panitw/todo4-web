@@ -344,6 +344,7 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
   const deleteAccountMutation = useMutation({
     mutationFn: () => deleteAccount(passwordRef.current?.value || undefined),
     onSuccess: () => {
+      setOpen(false);
       void queryClient.clear();
       router.push('/login');
     },
@@ -408,7 +409,7 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
               </p>
             </div>
             <AlertDialog open={open} onOpenChange={setOpen}>
-              <AlertDialogTrigger render={<Button variant="destructive" size="sm" />}>
+              <AlertDialogTrigger render={<Button variant="destructive" size="sm" disabled={!profile} />}>
                 Delete Account
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -439,7 +440,13 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
                   <AlertDialogAction
                     variant="destructive"
                     disabled={deleteAccountMutation.isPending}
-                    onClick={() => deleteAccountMutation.mutate()}
+                    onClick={() => {
+                      if (profile?.hasPassword && !passwordRef.current?.value) {
+                        toast.error('Password is required to confirm account deletion.');
+                        return;
+                      }
+                      deleteAccountMutation.mutate();
+                    }}
                   >
                     {deleteAccountMutation.isPending ? 'Deleting…' : 'Delete Account'}
                   </AlertDialogAction>

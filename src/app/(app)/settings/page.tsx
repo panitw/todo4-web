@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
+  getProfile,
   updateProfile,
   getOAuthProviders,
   disconnectOAuthProvider,
@@ -70,6 +71,14 @@ function ProfileSection({ profile }: { profile: UserProfile | undefined }) {
   const [timezone, setTimezone] = useState(profile?.timezone ?? 'UTC');
   const [email, setEmail] = useState(profile?.email ?? '');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name ?? '');
+      setTimezone(profile.timezone);
+      setEmail(profile.email);
+    }
+  }, [profile]);
 
   const mutation = useMutation({
     mutationFn: updateProfile,
@@ -229,7 +238,7 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
     changePwdMutation.mutate({ currentPassword, newPassword });
   }
 
-  const hasPassword = !!profile?.emailVerified;
+  const hasPassword = !!profile?.hasPassword;
 
   return (
     <section className="p-6 space-y-8">
@@ -320,11 +329,10 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<Section>('profile');
 
-  // Profile data is fetched optimistically — in production this would come from
-  // a GET /users/me endpoint or server-side props. For now, we pass undefined
-  // and let forms initialize with empty state; after a successful update the
-  // local state is refreshed from the mutation response.
-  const profilePlaceholder: UserProfile | undefined = undefined;
+  const { data: profile } = useQuery<UserProfile>({
+    queryKey: ['profile'],
+    queryFn: getProfile,
+  });
 
   return (
     <ThreeColumnShell
@@ -333,9 +341,9 @@ export default function SettingsPage() {
       }
       middle={
         activeSection === 'profile' ? (
-          <ProfileSection profile={profilePlaceholder} />
+          <ProfileSection profile={profile} />
         ) : (
-          <SecuritySection profile={profilePlaceholder} />
+          <SecuritySection profile={profile} />
         )
       }
     />

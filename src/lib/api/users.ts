@@ -6,6 +6,7 @@ export interface UserProfile {
   name: string | null;
   timezone: string;
   emailVerified: boolean;
+  hasPassword: boolean;
   pendingEmail: string | null;
   createdAt: string;
   updatedAt: string;
@@ -52,7 +53,12 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
     },
   });
 
-  const body = (await res.json()) as ApiResponse<T> | ApiErrorResponse;
+  let body: ApiResponse<T> | ApiErrorResponse;
+  try {
+    body = (await res.json()) as ApiResponse<T> | ApiErrorResponse;
+  } catch {
+    throw Object.assign(new Error('Unexpected server response'), { status: res.status });
+  }
 
   if (!res.ok) {
     const err = body as ApiErrorResponse;
@@ -63,6 +69,10 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return (body as ApiResponse<T>).data;
+}
+
+export async function getProfile(): Promise<UserProfile> {
+  return apiFetch<UserProfile>('/users/me');
 }
 
 export async function updateProfile(data: UpdateProfileInput): Promise<UserProfile> {

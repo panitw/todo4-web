@@ -77,7 +77,7 @@ export function LoginForm() {
           variant="outline"
           className="w-full"
           onClick={() => {
-            window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/v1/auth/google`;
+            window.location.href = '/api/v1/auth/google';
           }}
         >
           Continue with Google
@@ -87,7 +87,7 @@ export function LoginForm() {
           variant="outline"
           className="w-full"
           onClick={() => {
-            window.location.href = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000'}/api/v1/auth/facebook`;
+            window.location.href = '/api/v1/auth/facebook';
           }}
         >
           Continue with Facebook

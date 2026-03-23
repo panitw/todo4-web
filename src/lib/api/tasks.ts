@@ -94,47 +94,47 @@ export async function listTasks(params?: {
   if (params?.priority) searchParams.set('priority', params.priority);
 
   const query = searchParams.toString();
-  const path = `/tasks${query ? `?${query}` : ''}`;
+  const path = `/api/v1/tasks${query ? `?${query}` : ''}`;
 
   return apiFetch<TaskListResponse>(path);
 }
 
 export async function createTask(data: CreateTaskInput): Promise<Task> {
-  return apiFetch<Task>('/tasks', {
+  return apiFetch<Task>('/api/v1/tasks', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export async function getTask(id: string): Promise<Task> {
-  return apiFetch<Task>(`/tasks/${id}`);
+  return apiFetch<Task>(`/api/v1/tasks/${id}`);
 }
 
 export async function updateTask(
   id: string,
   data: UpdateTaskInput,
 ): Promise<Task> {
-  return apiFetch<Task>(`/tasks/${id}`, {
+  return apiFetch<Task>(`/api/v1/tasks/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
 
 export async function listTaskHistory(taskId: string): Promise<TaskHistory[]> {
-  return apiFetch<TaskHistory[]>(`/tasks/${taskId}/history`);
+  return apiFetch<TaskHistory[]>(`/api/v1/tasks/${taskId}/history`);
 }
 
 export async function listTaskComments(
   taskId: string,
 ): Promise<TaskComment[]> {
-  return apiFetch<TaskComment[]>(`/tasks/${taskId}/comments`);
+  return apiFetch<TaskComment[]>(`/api/v1/tasks/${taskId}/comments`);
 }
 
 export async function createComment(
   taskId: string,
   body: string,
 ): Promise<TaskComment> {
-  return apiFetch<TaskComment>(`/tasks/${taskId}/comments`, {
+  return apiFetch<TaskComment>(`/api/v1/tasks/${taskId}/comments`, {
     method: 'POST',
     body: JSON.stringify({ body }),
   });

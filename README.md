@@ -34,7 +34,7 @@ Visit `http://localhost:3002` in your browser to verify the app loads with no er
 
 | Variable | Default | Required | Description |
 |---|---|---|---|
-| `NEXT_PUBLIC_API_URL` | `http://localhost:3000` | Yes | Base URL of `todo-api` (inlined at build time) |
+| `API_URL` | `http://localhost:3000` | Yes | Base URL of `todo-api` — read by the Next.js server at startup (runtime, not build time) |
 | `NEXT_PUBLIC_SENTRY_DSN` | — | No | Sentry DSN for browser error monitoring |
 | `PORT` | `3000` | No | Dev server port — set to `3002` to avoid conflict with `todo-api` |
 

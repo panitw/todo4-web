@@ -1,5 +1,3 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
-
 interface ApiResponse<T> {
   data: T;
   meta: unknown;
@@ -13,7 +11,7 @@ interface ApiErrorResponse {
 }
 
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(path, {
     ...init,
     credentials: 'include', // send httpOnly cookies
     headers: {

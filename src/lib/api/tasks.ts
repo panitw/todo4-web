@@ -29,10 +29,12 @@ export interface Task {
   dueDate: string | null; // ISO 8601
   recurrenceRule: string | null;
   referenceUrl: string | null;
+  assignedAgentId: string | null;
   sortOrder: number;
   deletedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  tags?: string[];
 }
 
 export interface TaskListMeta {
@@ -44,6 +46,37 @@ export interface TaskListMeta {
 interface TaskListResponse {
   data: Task[];
   meta: TaskListMeta;
+}
+
+export interface TaskHistory {
+  id: string;
+  taskId: string;
+  actorType: 'human' | 'agent';
+  actorId: string;
+  action: string;
+  details: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface TaskComment {
+  id: string;
+  taskId: string;
+  userId: string | null;
+  authorType: 'human' | 'agent';
+  agentId: string | null;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateTaskInput {
+  title?: string;
+  description?: string;
+  priority?: 'p1' | 'p2' | 'p3' | 'p4';
+  dueDate?: string | null; // ISO 8601 or null to clear
+  tags?: string[];
+  recurrence?: 'daily' | 'weekly' | 'monthly' | null;
+  referenceUrl?: string;
 }
 
 export async function listTasks(params?: {
@@ -70,5 +103,39 @@ export async function createTask(data: CreateTaskInput): Promise<Task> {
   return apiFetch<Task>('/tasks', {
     method: 'POST',
     body: JSON.stringify(data),
+  });
+}
+
+export async function getTask(id: string): Promise<Task> {
+  return apiFetch<Task>(`/tasks/${id}`);
+}
+
+export async function updateTask(
+  id: string,
+  data: UpdateTaskInput,
+): Promise<Task> {
+  return apiFetch<Task>(`/tasks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function listTaskHistory(taskId: string): Promise<TaskHistory[]> {
+  return apiFetch<TaskHistory[]>(`/tasks/${taskId}/history`);
+}
+
+export async function listTaskComments(
+  taskId: string,
+): Promise<TaskComment[]> {
+  return apiFetch<TaskComment[]>(`/tasks/${taskId}/comments`);
+}
+
+export async function createComment(
+  taskId: string,
+  body: string,
+): Promise<TaskComment> {
+  return apiFetch<TaskComment>(`/tasks/${taskId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
   });
 }

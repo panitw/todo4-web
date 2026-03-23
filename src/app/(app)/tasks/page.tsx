@@ -2,13 +2,16 @@
 
 import React, { useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { toast } from 'sonner';
 import { ThreeColumnShell } from '@/components/layout/three-column-shell';
 import { AppLeftNav } from '@/components/shared/app-left-nav';
 import { TaskRow } from '@/components/tasks/task-row';
 import { FilterChipBar, type TaskFilters } from '@/components/tasks/filter-chip-bar';
 import { QuickAddBar } from '@/components/tasks/quick-add-bar';
 import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
+import { TaskDetailPanel } from '@/components/tasks/task-detail-panel';
 import { useTasks } from '@/hooks/use-tasks';
+import { useTask } from '@/hooks/use-task';
 import type { Task } from '@/lib/api/tasks';
 
 // Skeleton placeholder for loading state
@@ -104,18 +107,22 @@ export default function TasksPage() {
 
   const tasks = data?.data ?? [];
 
+  // Fetch full task detail (with tags) for the right panel
+  const { data: selectedTask, isError: taskFetchError } = useTask(selectedTaskId);
+
+  React.useEffect(() => {
+    if (taskFetchError) {
+      toast.error('Failed to load task details');
+    }
+  }, [taskFetchError]);
+
   function handleSelectTask(id: string) {
     setSelectedTaskId(id);
     setIsRightPanelOpen(true);
   }
 
-  // Derive the selected task. If it's no longer in the current result set
-  // (filtered out or pushed off page after a background refetch), treat as null
-  // and close the panel — no setState needed, just derived rendering.
-  const selectedTask = selectedTaskId
-    ? (tasks.find((t) => t.id === selectedTaskId) ?? null)
-    : null;
-  const effectiveRightPanelOpen = isRightPanelOpen && selectedTask !== null;
+  // Use selectedTask (from useTask) not selectedTaskId to avoid flicker while loading
+  const effectiveRightPanelOpen = isRightPanelOpen && !!selectedTask;
 
   const leftNav = <AppLeftNav />;
 
@@ -161,20 +168,17 @@ export default function TasksPage() {
     </div>
   );
 
-  const right = (
+  const right = selectedTask ? (
+    <TaskDetailPanel
+      task={selectedTask}
+      onClose={() => {
+        setSelectedTaskId(null);
+        setIsRightPanelOpen(false);
+      }}
+    />
+  ) : (
     <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-6">
-      {selectedTask ? (
-        <div className="w-full">
-          <p className="font-medium text-foreground">{selectedTask.title}</p>
-          {selectedTask.description && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {selectedTask.description}
-            </p>
-          )}
-        </div>
-      ) : (
-        <p>Select a task to see details</p>
-      )}
+      <p>Select a task to see details</p>
     </div>
   );
 

@@ -1,0 +1,35 @@
+import { apiFetch } from './client';
+
+export interface LoginResult {
+  /** The API sets an httpOnly access_token cookie on success — no token in body */
+  userId: string;
+}
+
+export interface RegisterResult {
+  message: string;
+}
+
+export async function login(email: string, password: string): Promise<LoginResult> {
+  return apiFetch<LoginResult>('/api/v1/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  });
+}
+
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+): Promise<RegisterResult> {
+  return apiFetch<RegisterResult>('/api/v1/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ name, email, password }),
+  });
+}
+
+export async function resendVerificationEmail(email: string): Promise<void> {
+  await apiFetch<{ message: string }>('/api/v1/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // Routes that do not require authentication
-const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/auth'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/forgot-password', '/reset-password', '/auth'];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some(
@@ -23,6 +23,8 @@ export function middleware(request: NextRequest) {
   if (!hasSession) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/login';
+    const search = request.nextUrl.search;
+    loginUrl.searchParams.set('next', pathname + search);
     return NextResponse.redirect(loginUrl);
   }
 

@@ -120,6 +120,29 @@ export async function updateTask(
   });
 }
 
+export interface CloseTaskInput {
+  completionNote?: string;
+}
+
+export async function closeTask(id: string, data?: CloseTaskInput): Promise<Task> {
+  return apiFetch<Task>(`/api/v1/tasks/${id}/close`, {
+    method: 'POST',
+    body: JSON.stringify(data ?? {}),
+  });
+}
+
+export async function archiveTask(id: string): Promise<Task> {
+  return apiFetch<Task>(`/api/v1/tasks/${id}/archive`, { method: 'POST' });
+}
+
+export async function restoreTask(id: string): Promise<Task> {
+  return apiFetch<Task>(`/api/v1/tasks/${id}/restore`, { method: 'POST' });
+}
+
+export async function deleteTask(id: string): Promise<Task> {
+  return apiFetch<Task>(`/api/v1/tasks/${id}`, { method: 'DELETE' });
+}
+
 export async function listTaskHistory(taskId: string): Promise<TaskHistory[]> {
   return apiFetch<TaskHistory[]>(`/api/v1/tasks/${taskId}/history`);
 }

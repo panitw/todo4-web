@@ -7,6 +7,10 @@ import { useUpdateTask } from '@/hooks/use-update-task';
 import { useTaskHistory } from '@/hooks/use-task-history';
 import { useTaskComments } from '@/hooks/use-task-comments';
 import { useCreateComment } from '@/hooks/use-create-comment';
+import { useArchiveTask } from '@/hooks/use-archive-task';
+import { useRestoreTask } from '@/hooks/use-restore-task';
+import { useDeleteTask } from '@/hooks/use-delete-task';
+import { CloseTaskDialog } from './close-task-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,6 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
@@ -382,16 +396,66 @@ interface TaskDetailPanelProps {
 }
 
 export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
+  const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const { mutate: archiveMutate } = useArchiveTask();
+  const { mutate: restoreMutate } = useRestoreTask();
+  const { mutate: deleteMutate } = useDeleteTask();
+
   return (
+    <>
     <div
       role="complementary"
       aria-label="Task detail"
       className="flex flex-col h-full"
     >
       {/* Header */}
-      <div className="p-4 border-b border-border flex items-start gap-2">
+      <div className="p-4 border-b border-border flex items-start gap-2 flex-wrap">
         <InlineEditableTitle task={task} />
         <StatusBadge status={task.status} />
+        {/* Action buttons — shown based on task status */}
+        {task.status !== 'closed' && task.status !== 'archived' && (
+          <Button size="sm" variant="outline" onClick={() => setIsCloseDialogOpen(true)}>
+            Close task
+          </Button>
+        )}
+        {task.status === 'closed' && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              archiveMutate(task.id, {
+                onSuccess: () => toast.success('Task archived'),
+                onError: () => toast.error('Failed to archive task'),
+              })
+            }
+          >
+            Archive
+          </Button>
+        )}
+        {task.status === 'archived' && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              restoreMutate(task.id, {
+                onSuccess: () => toast.success('Task restored'),
+                onError: () => toast.error('Failed to restore task'),
+              })
+            }
+          >
+            Restore
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
+          onClick={() => setIsDeleteDialogOpen(true)}
+        >
+          Delete
+        </Button>
         <button
           onClick={onClose}
           aria-label="Close task detail"
@@ -486,5 +550,41 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
         </TabsContent>
       </Tabs>
     </div>
+
+    <CloseTaskDialog
+      taskId={task.id}
+      open={isCloseDialogOpen}
+      onOpenChange={setIsCloseDialogOpen}
+    />
+
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete this task?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This task will be removed from your list. Soft-deleted tasks are permanently purged after one year.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={() => {
+              deleteMutate(task.id, {
+                onSuccess: () => {
+                  setIsDeleteDialogOpen(false);
+                  onClose();
+                  toast.success('Task deleted');
+                },
+                onError: () => toast.error('Failed to delete task'),
+              });
+            }}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

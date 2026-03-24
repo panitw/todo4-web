@@ -27,7 +27,8 @@ const STATUSES: { value: string; label: string }[] = [
   { value: 'in_progress', label: 'In Progress' },
   { value: 'waiting_for_human', label: 'Waiting' },
   { value: 'blocked', label: 'Blocked' },
-  { value: 'closed', label: 'Closed' },
+  { value: 'closed', label: 'Completed' },
+  { value: 'archived', label: 'Archived' },
 ];
 
 function isNonDefault(filters: TaskFilters): boolean {

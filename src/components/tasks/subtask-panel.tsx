@@ -114,12 +114,13 @@ export function SubtaskPanel({ taskId }: { taskId: string }) {
   function handleAdd() {
     const title = newTitle.trim();
     if (!title) return;
+    setNewTitle('');
+    inputRef.current?.focus();
     createMutate(title, {
-      onSuccess: () => {
-        setNewTitle('');
-        inputRef.current?.focus();
+      onError: () => {
+        toast.error('Failed to add subtask');
+        setNewTitle(title);
       },
-      onError: () => toast.error('Failed to add subtask'),
     });
   }
 

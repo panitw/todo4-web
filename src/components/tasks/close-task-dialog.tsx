@@ -22,42 +22,69 @@ interface CloseTaskDialogProps {
 
 export function CloseTaskDialog({ taskId, open, onOpenChange }: CloseTaskDialogProps) {
   const [completionNote, setCompletionNote] = useState('');
+  const [forceRequired, setForceRequired] = useState(false);
   const { mutate, isPending } = useCloseTask();
 
-  function handleConfirm() {
+  function handleConfirm(force?: boolean) {
     mutate(
-      { id: taskId, completionNote: completionNote.trim() || undefined },
+      { id: taskId, completionNote: completionNote.trim() || undefined, force },
       {
         onSuccess: () => {
           onOpenChange(false);
           setCompletionNote('');
+          setForceRequired(false);
           toast.success('Task closed');
         },
-        onError: () => toast.error('Failed to close task'),
+        onError: (err: unknown) => {
+          const code = (err as { code?: string })?.code;
+          const message = (err as { message?: string })?.message ?? '';
+          if (code === 'incomplete_subtasks' || message.includes('incomplete_subtasks')) {
+            setForceRequired(true);
+          } else {
+            toast.error('Failed to close task');
+          }
+        },
       },
     );
   }
 
+  function handleClose() {
+    onOpenChange(false);
+    setForceRequired(false);
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Close task</DialogTitle>
-          <DialogDescription>Optionally add a completion note.</DialogDescription>
+          <DialogDescription>
+            {forceRequired
+              ? 'This task has incomplete subtasks. Close anyway?'
+              : 'Optionally add a completion note.'}
+          </DialogDescription>
         </DialogHeader>
-        <Textarea
-          placeholder="Completion note (optional)"
-          value={completionNote}
-          onChange={(e) => setCompletionNote(e.target.value)}
-          rows={3}
-        />
+        {!forceRequired && (
+          <Textarea
+            placeholder="Completion note (optional)"
+            value={completionNote}
+            onChange={(e) => setCompletionNote(e.target.value)}
+            rows={3}
+          />
+        )}
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
+          <Button variant="outline" onClick={handleClose} disabled={isPending}>
             Cancel
           </Button>
-          <Button onClick={handleConfirm} disabled={isPending}>
-            {isPending ? 'Closing…' : 'Close task'}
-          </Button>
+          {forceRequired ? (
+            <Button variant="destructive" onClick={() => handleConfirm(true)} disabled={isPending}>
+              {isPending ? 'Closing…' : 'Close anyway'}
+            </Button>
+          ) : (
+            <Button onClick={() => handleConfirm()} disabled={isPending}>
+              {isPending ? 'Closing…' : 'Close task'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

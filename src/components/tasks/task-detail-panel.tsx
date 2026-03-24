@@ -8,6 +8,7 @@ import { useTaskHistory } from '@/hooks/use-task-history';
 import { useTaskComments } from '@/hooks/use-task-comments';
 import { useCreateComment } from '@/hooks/use-create-comment';
 import { useArchiveTask } from '@/hooks/use-archive-task';
+import { SubtaskPanel } from './subtask-panel';
 import { useRestoreTask } from '@/hooks/use-restore-task';
 import { useDeleteTask } from '@/hooks/use-delete-task';
 import { CloseTaskDialog } from './close-task-dialog';
@@ -525,7 +526,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
           value="subtasks"
           className="flex-1 overflow-y-auto p-4 mt-0"
         >
-          <p className="text-sm text-muted-foreground">Subtasks coming soon</p>
+          <SubtaskPanel taskId={task.id} />
         </TabsContent>
 
         <TabsContent

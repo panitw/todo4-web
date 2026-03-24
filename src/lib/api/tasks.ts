@@ -122,6 +122,7 @@ export async function updateTask(
 
 export interface CloseTaskInput {
   completionNote?: string;
+  force?: boolean;
 }
 
 export async function closeTask(id: string, data?: CloseTaskInput): Promise<Task> {
@@ -160,5 +161,42 @@ export async function createComment(
   return apiFetch<TaskComment>(`/api/v1/tasks/${taskId}/comments`, {
     method: 'POST',
     body: JSON.stringify({ body }),
+  });
+}
+
+export interface Subtask {
+  id: string;
+  taskId: string;
+  title: string;
+  completed: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export async function listSubtasks(taskId: string): Promise<Subtask[]> {
+  return apiFetch<Subtask[]>(`/api/v1/tasks/${taskId}/subtasks`);
+}
+
+export async function createSubtask(taskId: string, title: string): Promise<Subtask> {
+  return apiFetch<Subtask>(`/api/v1/tasks/${taskId}/subtasks`, {
+    method: 'POST',
+    body: JSON.stringify({ title }),
+  });
+}
+
+export async function updateSubtask(
+  taskId: string,
+  subtaskId: string,
+  data: Partial<Pick<Subtask, 'title' | 'completed' | 'sortOrder'>>,
+): Promise<Subtask> {
+  return apiFetch<Subtask>(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteSubtask(taskId: string, subtaskId: string): Promise<void> {
+  return apiFetch<void>(`/api/v1/tasks/${taskId}/subtasks/${subtaskId}`, {
+    method: 'DELETE',
   });
 }

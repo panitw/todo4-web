@@ -123,7 +123,7 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick }: T
 
         {/* Tag chips (hidden on small screens to keep rows compact) */}
         {task.tags && task.tags.length > 0 && (
-          <span className="hidden md:flex items-center gap-1 shrink-0">
+          <span className="flex items-center gap-1 shrink-0">
             {task.tags.slice(0, 3).map((tag) => (
               <button
                 key={tag}

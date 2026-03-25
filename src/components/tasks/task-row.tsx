@@ -32,6 +32,7 @@ interface TaskRowProps {
   selected: boolean;
   highlighted?: boolean;
   onSelect: (id: string) => void;
+  onTagClick?: (tagName: string) => void;
 }
 
 const PRIORITY_CONFIG: Record<
@@ -55,7 +56,7 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function TaskRow({ task, selected, highlighted, onSelect }: TaskRowProps) {
+export function TaskRow({ task, selected, highlighted, onSelect, onTagClick }: TaskRowProps) {
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG['p4'];
   const overdue = isOverdue(task);
   const completed = task.status === 'closed';
@@ -119,6 +120,25 @@ export function TaskRow({ task, selected, highlighted, onSelect }: TaskRowProps)
         >
           {task.title}
         </span>
+
+        {/* Tag chips (hidden on small screens to keep rows compact) */}
+        {task.tags && task.tags.length > 0 && (
+          <span className="hidden md:flex items-center gap-1 shrink-0">
+            {task.tags.slice(0, 3).map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onTagClick?.(tag); }}
+                className={cn(
+                  'px-1.5 py-0.5 rounded border text-[10px] bg-teal-50 border-teal-400 text-teal-700',
+                  onTagClick ? 'cursor-pointer hover:bg-teal-100' : 'cursor-default',
+                )}
+              >
+                {tag}
+              </button>
+            ))}
+          </span>
+        )}
 
         {/* Due date chip */}
         {task.dueDate && (

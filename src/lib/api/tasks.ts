@@ -1,5 +1,10 @@
 import { apiFetch } from './client';
 
+export interface TagItem {
+  name: string;
+  namespace: string | null;
+}
+
 export interface CreateTaskInput {
   title: string;
   description?: string;
@@ -84,6 +89,9 @@ export async function listTasks(params?: {
   limit?: number;
   status?: string;
   priority?: string;
+  tags?: string;
+  dueAfter?: string;
+  dueBefore?: string;
 }): Promise<{ data: Task[]; meta: TaskListMeta }> {
   const searchParams = new URLSearchParams();
   if (params?.page !== undefined)
@@ -92,11 +100,19 @@ export async function listTasks(params?: {
     searchParams.set('limit', String(params.limit));
   if (params?.status) searchParams.set('status', params.status);
   if (params?.priority) searchParams.set('priority', params.priority);
+  if (params?.tags) searchParams.set('tags', params.tags);
+  if (params?.dueAfter) searchParams.set('dueAfter', params.dueAfter);
+  if (params?.dueBefore) searchParams.set('dueBefore', params.dueBefore);
 
   const query = searchParams.toString();
   const path = `/api/v1/tasks${query ? `?${query}` : ''}`;
 
   return apiFetch<TaskListResponse>(path);
+}
+
+export async function listTags(): Promise<TagItem[]> {
+  const response = await apiFetch<{ data: TagItem[] }>('/api/v1/tags');
+  return response.data;
 }
 
 export async function createTask(data: CreateTaskInput): Promise<Task> {

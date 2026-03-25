@@ -6,11 +6,15 @@ import { cn } from '@/lib/utils';
 export interface TaskFilters {
   priority: ('p1' | 'p2' | 'p3' | 'p4')[];
   status: string[];
+  tags: string[];
+  dueAfter: string;
+  dueBefore: string;
 }
 
 interface FilterChipBarProps {
   filters: TaskFilters;
   onChange: (filters: TaskFilters) => void;
+  availableTags?: { name: string; namespace: string | null }[];
 }
 
 const DEFAULT_PRIORITY: TaskFilters['priority'] = [];
@@ -36,7 +40,9 @@ function isNonDefault(filters: TaskFilters): boolean {
     filters.priority.length !== DEFAULT_PRIORITY.length ||
     !DEFAULT_PRIORITY.every((p) => filters.priority.includes(p));
   const hasStatus = filters.status.length > 0;
-  return priorityDiffers || hasStatus;
+  const hasTags = filters.tags.length > 0;
+  const hasDueRange = !!filters.dueAfter || !!filters.dueBefore;
+  return priorityDiffers || hasStatus || hasTags || hasDueRange;
 }
 
 function ChipButton({
@@ -64,7 +70,7 @@ function ChipButton({
   );
 }
 
-export function FilterChipBar({ filters, onChange }: FilterChipBarProps) {
+export function FilterChipBar({ filters, onChange, availableTags }: FilterChipBarProps) {
   function togglePriority(p: 'p1' | 'p2' | 'p3' | 'p4') {
     const next = filters.priority.includes(p)
       ? filters.priority.filter((x) => x !== p)
@@ -80,7 +86,7 @@ export function FilterChipBar({ filters, onChange }: FilterChipBarProps) {
   }
 
   function clearFilters() {
-    onChange({ priority: [...DEFAULT_PRIORITY], status: [] });
+    onChange({ priority: [...DEFAULT_PRIORITY], status: [], tags: [], dueAfter: '', dueBefore: '' });
   }
 
   const nonDefault = isNonDefault(filters);
@@ -106,6 +112,67 @@ export function FilterChipBar({ filters, onChange }: FilterChipBarProps) {
           onClick={() => toggleStatus(s.value)}
         />
       ))}
+
+      {/* Tag filters — show active tag chips with ✕ to remove */}
+      {filters.tags.length > 0 && (
+        <>
+          <span className="w-px h-4 bg-border mx-0.5" aria-hidden="true" />
+          {filters.tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => onChange({ ...filters, tags: filters.tags.filter((t) => t !== tag) })}
+              className="px-2 py-0.5 rounded border text-[11px] bg-teal-50 border-teal-400 text-teal-700 flex items-center gap-1"
+            >
+              {tag} <span aria-hidden="true">✕</span>
+            </button>
+          ))}
+        </>
+      )}
+
+      {/* Tag selector dropdown — using native select for MVP simplicity */}
+      {availableTags && availableTags.length > 0 && (
+        <select
+          className="text-[11px] border border-border rounded px-1 py-0.5 bg-muted text-muted-foreground"
+          value=""
+          onChange={(e) => {
+            const tag = e.target.value;
+            if (tag && !filters.tags.includes(tag)) {
+              onChange({ ...filters, tags: [...filters.tags, tag] });
+            }
+          }}
+        >
+          <option value="">+ Tag</option>
+          {availableTags
+            .filter((t) => !filters.tags.includes(t.name))
+            .map((t) => (
+              <option key={t.name} value={t.name}>
+                {t.name}
+              </option>
+            ))}
+        </select>
+      )}
+
+      {/* Due date range */}
+      <span className="w-px h-4 bg-border mx-0.5" aria-hidden="true" />
+      <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+        From
+        <input
+          type="date"
+          value={filters.dueAfter}
+          onChange={(e) => onChange({ ...filters, dueAfter: e.target.value })}
+          className="text-[11px] border border-border rounded px-1 py-0.5 bg-background"
+        />
+      </label>
+      <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+        To
+        <input
+          type="date"
+          value={filters.dueBefore}
+          onChange={(e) => onChange({ ...filters, dueBefore: e.target.value })}
+          className="text-[11px] border border-border rounded px-1 py-0.5 bg-background"
+        />
+      </label>
 
       {nonDefault && (
         <button

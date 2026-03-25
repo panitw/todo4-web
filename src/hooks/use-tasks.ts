@@ -4,6 +4,9 @@ import { listTasks, type Task, type TaskListMeta } from '@/lib/api/tasks';
 export interface TaskFilters {
   priority?: ('p1' | 'p2' | 'p3' | 'p4')[];
   status?: string[];
+  tags?: string[];
+  dueAfter?: string;
+  dueBefore?: string;
 }
 
 export function useTasks(filters?: TaskFilters) {
@@ -19,6 +22,12 @@ export function useTasks(filters?: TaskFilters) {
           filters?.status && filters.status.length > 0
             ? filters.status.join(',')
             : undefined,
+        tags:
+          filters?.tags && filters.tags.length > 0
+            ? filters.tags.join(',')
+            : undefined,
+        dueAfter: filters?.dueAfter,
+        dueBefore: filters?.dueBefore,
       }),
     refetchInterval: 30_000,
     staleTime: 5_000,

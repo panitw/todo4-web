@@ -394,9 +394,10 @@ function CommentsTab({ taskId }: { taskId: string }) {
 interface TaskDetailPanelProps {
   task: Task;
   onClose: () => void;
+  onTagClick?: (tagName: string) => void;
 }
 
-export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
+export function TaskDetailPanel({ task, onClose, onTagClick }: TaskDetailPanelProps) {
   const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
@@ -471,7 +472,12 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
         <PrioritySelector task={task} />
         <DueDatePicker task={task} />
         {task.tags?.map((tag) => (
-          <Badge key={tag} variant="secondary" className="text-xs">
+          <Badge
+            key={tag}
+            variant="secondary"
+            className={`text-xs ${onTagClick ? 'cursor-pointer hover:bg-teal-50 hover:text-teal-700 hover:border-teal-400' : ''}`}
+            onClick={() => onTagClick?.(tag)}
+          >
             {tag}
           </Badge>
         ))}

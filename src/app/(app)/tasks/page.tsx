@@ -11,6 +11,7 @@ import { QuickAddBar } from '@/components/tasks/quick-add-bar';
 import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
 import { TaskDetailPanel } from '@/components/tasks/task-detail-panel';
 import { useTasks } from '@/hooks/use-tasks';
+import { useTags } from '@/hooks/use-tags';
 import { useTask } from '@/hooks/use-task';
 import type { Task } from '@/lib/api/tasks';
 
@@ -30,11 +31,13 @@ function VirtualTaskList({
   selectedTaskId,
   highlightedTaskId,
   onSelect,
+  onTagClick,
 }: {
   tasks: Task[];
   selectedTaskId: string | null;
   highlightedTaskId: string | null;
   onSelect: (id: string) => void;
+  onTagClick?: (tagName: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +79,7 @@ function VirtualTaskList({
                 selected={task.id === selectedTaskId}
                 highlighted={task.id === highlightedTaskId}
                 onSelect={onSelect}
+                onTagClick={onTagClick}
               />
             </div>
           );
@@ -90,6 +94,9 @@ export default function TasksPage() {
   const [filters, setFilters] = useState<TaskFilters>({
     priority: [],
     status: [],
+    tags: [],
+    dueAfter: '',
+    dueBefore: '',
   });
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
@@ -100,9 +107,14 @@ export default function TasksPage() {
     setTimeout(() => setNewTaskId(null), 1500);
   }
 
+  const { data: availableTags } = useTags();
+
   const { data, isPending } = useTasks({
     priority: filters.priority,
     status: filters.status,
+    tags: filters.tags,
+    dueAfter: filters.dueAfter || undefined,
+    dueBefore: filters.dueBefore || undefined,
   });
 
   const tasks = data?.data ?? [];
@@ -121,6 +133,13 @@ export default function TasksPage() {
     setIsRightPanelOpen(true);
   }
 
+  function handleTagClick(tagName: string) {
+    setFilters((prev) => ({
+      ...prev,
+      tags: prev.tags.includes(tagName) ? prev.tags : [...prev.tags, tagName],
+    }));
+  }
+
   // Use selectedTask (from useTask) not selectedTaskId to avoid flicker while loading
   const effectiveRightPanelOpen = isRightPanelOpen && !!selectedTask;
 
@@ -137,7 +156,7 @@ export default function TasksPage() {
       </div>
 
       {/* Filter chip bar */}
-      <FilterChipBar filters={filters} onChange={setFilters} />
+      <FilterChipBar filters={filters} onChange={setFilters} availableTags={availableTags ?? []} />
 
       {/* Task list */}
       {isPending ? (
@@ -163,6 +182,7 @@ export default function TasksPage() {
           selectedTaskId={selectedTaskId}
           highlightedTaskId={newTaskId}
           onSelect={handleSelectTask}
+          onTagClick={handleTagClick}
         />
       )}
     </div>
@@ -175,6 +195,7 @@ export default function TasksPage() {
         setSelectedTaskId(null);
         setIsRightPanelOpen(false);
       }}
+      onTagClick={handleTagClick}
     />
   ) : (
     <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-6">

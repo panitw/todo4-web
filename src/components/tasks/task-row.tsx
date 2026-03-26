@@ -123,7 +123,7 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick }: T
 
         {/* Tag chips (hidden on small screens to keep rows compact) */}
         {task.tags && task.tags.length > 0 && (
-          <span className="flex items-center gap-1 shrink-0">
+          <span className="hidden sm:flex items-center gap-1 shrink-0">
             {task.tags.slice(0, 3).map((tag) => (
               <button
                 key={tag}
@@ -157,7 +157,7 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick }: T
         {/* Action menu (visible on hover) */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-muted"
+            className="shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 p-1 rounded hover:bg-muted"
             aria-label="Task actions"
             onClick={(e) => e.stopPropagation()}
           >

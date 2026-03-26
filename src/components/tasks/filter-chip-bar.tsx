@@ -92,7 +92,7 @@ export function FilterChipBar({ filters, onChange, availableTags }: FilterChipBa
   const nonDefault = isNonDefault(filters);
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b border-border">
+    <div className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b border-border overflow-x-auto">
       {PRIORITIES.map((p) => (
         <ChipButton
           key={p.value}

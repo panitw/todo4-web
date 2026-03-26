@@ -132,6 +132,7 @@
   }
   html {
     @apply font-sans;
+    touch-action: pan-x pan-y;
   }
   /* Prevent iOS Safari from auto-zooming on input focus (triggered when font-size < 16px) */
   @media screen and (max-width: 767px) {

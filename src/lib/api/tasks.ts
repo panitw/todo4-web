@@ -82,6 +82,25 @@ export interface UpdateTaskInput {
   tags?: string[];
   recurrence?: 'daily' | 'weekly' | 'monthly' | null;
   referenceUrl?: string;
+  sortOrder?: number;
+}
+
+export interface BulkActionInput {
+  ids: string[];
+  action: 'close' | 'set_priority' | 'archive' | 'delete';
+  priority?: string;
+}
+
+export interface BulkActionResult {
+  processed: number;
+  failed: number;
+}
+
+export async function bulkAction(input: BulkActionInput): Promise<BulkActionResult> {
+  return apiFetch<BulkActionResult>('/api/v1/tasks/bulk', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }
 
 export async function listTasks(params?: {

@@ -37,6 +37,7 @@ export function useUpdateTask() {
     },
     onSuccess: (updatedTask: Task) => {
       queryClient.setQueryData(['task', updatedTask.id], updatedTask);
+      queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
     onSettled: (_data, _err, { id }) => {
       void queryClient.invalidateQueries({ queryKey: ['tasks'] });

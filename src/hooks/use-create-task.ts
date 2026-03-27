@@ -7,6 +7,7 @@ export function useCreateTask() {
     mutationFn: (input: CreateTaskInput) => createTask(input),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      void queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
   });
 }

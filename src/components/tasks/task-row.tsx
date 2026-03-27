@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import { GripVertical } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -33,6 +34,11 @@ interface TaskRowProps {
   highlighted?: boolean;
   onSelect: (id: string) => void;
   onTagClick?: (tagName: string) => void;
+  // New for story 3.7:
+  isBulkSelected?: boolean;
+  onBulkSelect?: (id: string, checked: boolean) => void;
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  isDragging?: boolean;
 }
 
 const PRIORITY_CONFIG: Record<
@@ -56,7 +62,7 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-export function TaskRow({ task, selected, highlighted, onSelect, onTagClick }: TaskRowProps) {
+export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isBulkSelected, onBulkSelect, dragHandleProps, isDragging }: TaskRowProps) {
   const priority = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG['p4'];
   const overdue = isOverdue(task);
   const completed = task.status === 'closed';
@@ -90,8 +96,36 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick }: T
           selected ? 'bg-indigo-50' : highlighted ? 'bg-green-50' : 'hover:bg-muted/50',
           hasAgentTouch ? 'border-teal-500' : 'border-transparent',
           completed && 'opacity-60',
+          isDragging && 'opacity-0',
         )}
       >
+        {/* Drag handle — visible on hover, only rendered when dragHandleProps provided */}
+        {dragHandleProps && (
+          <button
+            {...dragHandleProps}
+            className="shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 touch-none p-0.5 -ml-1"
+            aria-label="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+            tabIndex={-1}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Bulk selection checkbox — visible on hover or when selected */}
+        {onBulkSelect !== undefined && (
+          <Checkbox
+            checked={isBulkSelected ?? false}
+            onCheckedChange={(checked) => onBulkSelect(task.id, !!checked)}
+            className={cn(
+              'shrink-0 transition-opacity',
+              isBulkSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
+            )}
+            onClick={(e) => e.stopPropagation()}
+            aria-label={`Select "${task.title}" for bulk action`}
+          />
+        )}
+
         {/* Completion checkbox */}
         <Checkbox
           checked={completed}

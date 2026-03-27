@@ -28,11 +28,13 @@ import {
   changePassword,
   deleteAccount,
   cancelDeletion,
+  exportCsv,
+  exportJson,
   type UserProfile,
   type OAuthProvider,
 } from '@/lib/api/users';
 
-type Section = 'profile' | 'security' | 'account';
+type Section = 'profile' | 'security' | 'export' | 'account';
 
 interface ApiError extends Error {
   code?: string;
@@ -52,6 +54,7 @@ function SettingsNav({
   const items: { key: Section; label: string }[] = [
     { key: 'profile', label: 'Profile' },
     { key: 'security', label: 'Security' },
+    { key: 'export', label: 'Export data' },
     { key: 'account', label: 'Account' },
   ];
 
@@ -330,6 +333,49 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Export data section
+// ──────────────────────────────────────────────────────────────────────────────
+
+function ExportSection() {
+  const csvMutation = useMutation({
+    mutationFn: exportCsv,
+    onSuccess: () => toast.success('CSV downloaded'),
+    onError: () => toast.error('Failed to download CSV'),
+  });
+
+  const jsonMutation = useMutation({
+    mutationFn: exportJson,
+    onSuccess: () => toast.success('JSON downloaded'),
+    onError: () => toast.error('Failed to download JSON'),
+  });
+
+  return (
+    <section className="p-6">
+      <h2 className="text-lg font-semibold mb-1">Export data</h2>
+      <p className="text-sm text-muted-foreground mb-6">
+        Download a copy of your data. CSV includes all active tasks. JSON includes your full account data.
+      </p>
+      <div className="flex gap-3">
+        <Button
+          variant="outline"
+          disabled={csvMutation.isPending || jsonMutation.isPending}
+          onClick={() => csvMutation.mutate()}
+        >
+          {csvMutation.isPending ? 'Downloading…' : 'Download CSV'}
+        </Button>
+        <Button
+          variant="outline"
+          disabled={jsonMutation.isPending || csvMutation.isPending}
+          onClick={() => jsonMutation.mutate()}
+        >
+          {jsonMutation.isPending ? 'Downloading…' : 'Download JSON'}
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Account section (Danger Zone)
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -475,6 +521,7 @@ export default function SettingsPage() {
   function renderSection() {
     if (activeSection === 'profile') return <ProfileSection key={profile?.id} profile={profile} />;
     if (activeSection === 'security') return <SecuritySection profile={profile} />;
+    if (activeSection === 'export') return <ExportSection />;
     return <AccountSection profile={profile} />;
   }
 

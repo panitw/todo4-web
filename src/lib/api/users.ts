@@ -72,3 +72,33 @@ export async function cancelDeletion(): Promise<void> {
     method: 'POST',
   });
 }
+
+async function downloadBlob(path: string, fallbackFilename: string): Promise<void> {
+  const res = await fetch(path, { credentials: 'include' });
+  if (!res.ok) {
+    throw Object.assign(new Error('Export failed'), { status: res.status });
+  }
+  const blob = await res.blob();
+
+  // Extract filename from Content-Disposition header, or use fallback
+  const disposition = res.headers.get('Content-Disposition');
+  const filenameMatch = disposition?.match(/filename="(.+?)"/);
+  const filename = filenameMatch?.[1] ?? fallbackFilename;
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+export async function exportCsv(): Promise<void> {
+  return downloadBlob('/api/v1/users/me/export/csv', 'todo4-tasks.csv');
+}
+
+export async function exportJson(): Promise<void> {
+  return downloadBlob('/api/v1/users/me/export/json', 'todo4-export.json');
+}

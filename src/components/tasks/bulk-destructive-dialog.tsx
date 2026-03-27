@@ -54,19 +54,15 @@ export function BulkDestructiveDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription asChild>
-            <div>
-              <p>{body}</p>
-              <ul className="text-sm text-muted-foreground space-y-0.5 mt-2">
-                {preview.map((task) => (
-                  <li key={task.id} className="truncate">• {task.title}</li>
-                ))}
-                {extra > 0 && (
-                  <li className="text-muted-foreground/70">…and {extra} more</li>
-                )}
-              </ul>
-            </div>
-          </AlertDialogDescription>
+          <AlertDialogDescription>{body}</AlertDialogDescription>
+          <ul className="text-sm text-muted-foreground space-y-0.5 mt-2">
+            {preview.map((task) => (
+              <li key={task.id} className="truncate">• {task.title}</li>
+            ))}
+            {extra > 0 && (
+              <li className="text-muted-foreground/70">…and {extra} more</li>
+            )}
+          </ul>
         </AlertDialogHeader>
         <AlertDialogFooter>
           {/* Cancel is the default-focused element per UX-DR11 */}

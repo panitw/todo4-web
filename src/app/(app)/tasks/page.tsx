@@ -22,9 +22,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { ListTodo, MousePointerClick, Search } from 'lucide-react';
-import { ThreeColumnShell } from '@/components/layout/three-column-shell';
-import { AppLeftNav } from '@/components/shared/app-left-nav';
+import { ListTodo, Search } from 'lucide-react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { CopyablePromptBlock } from '@/components/shared/copyable-prompt-block';
 import { TaskRow } from '@/components/tasks/task-row';
@@ -305,134 +303,112 @@ export default function TasksPage() {
     }));
   }
 
-  // Use selectedTask (from useTask) not selectedTaskId to avoid flicker while loading
-  const effectiveRightPanelOpen = isRightPanelOpen && !!selectedTask;
-
-  const leftNav = <AppLeftNav />;
-
   const activeDragTask = orderedTasks.find((t) => t.id === activeDragId) ?? null;
-
-  const middle = (
-    <div className="flex flex-col h-full">
-      {/* Quick add bar */}
-      <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-2">
-        <QuickAddBar
-          onOpenFullForm={() => setIsCreationDialogOpen(true)}
-          onTaskCreated={handleTaskCreated}
-        />
-      </div>
-
-      {/* Filter chip bar */}
-      <FilterChipBar filters={filters} onChange={setFilters} availableTags={availableTags ?? []} />
-
-      {/* Task list */}
-      {isPending ? (
-        <div className="flex-1 overflow-y-auto divide-y divide-border">
-          <TaskRowSkeleton />
-          <TaskRowSkeleton />
-          <TaskRowSkeleton />
-          <TaskRowSkeleton />
-          <TaskRowSkeleton />
-        </div>
-      ) : tasks.length === 0 ? (
-        isNonDefault(filters) ? (
-          <EmptyState
-            icon={Search}
-            heading="No tasks match your filters"
-            description="Try adjusting or clearing your filters to see more tasks."
-          >
-            <button
-              type="button"
-              onClick={() => setFilters({ ...DEFAULT_FILTERS })}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-            >
-              Clear filters
-            </button>
-          </EmptyState>
-        ) : (
-          <EmptyState
-            icon={ListTodo}
-            heading="Your task list is empty"
-            description="Ask your AI agent to get started — copy a prompt below and paste it into your chat"
-            action={{ label: 'Connect an agent →', href: '/settings' }}
-          >
-            <div className="flex flex-col gap-2 w-full items-center">
-              {ONBOARDING_PROMPTS.map((prompt) => (
-                <CopyablePromptBlock key={prompt} prompt={prompt} />
-              ))}
-            </div>
-          </EmptyState>
-        )
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <VirtualTaskList
-            tasks={orderedTasks}
-            selectedTaskId={selectedTaskId}
-            highlightedTaskId={newTaskId}
-            selectedBulkIds={selectedBulkIds}
-            onSelect={handleSelectTask}
-            onBulkSelect={handleBulkSelect}
-            onTagClick={handleTagClick}
-          />
-          <DragOverlay>
-            {activeDragTask && (
-              <div className="shadow-lg rounded bg-background border border-border opacity-95">
-                <TaskRow
-                  task={activeDragTask}
-                  selected={false}
-                  onSelect={() => {}}
-                />
-              </div>
-            )}
-          </DragOverlay>
-        </DndContext>
-      )}
-
-      {/* Bulk action bar — appears at bottom when ≥2 tasks selected */}
-      {selectedBulkIds.size >= 2 && (
-        <BulkActionBar
-          selectedIds={Array.from(selectedBulkIds)}
-          selectedTasks={orderedTasks.filter((t) => selectedBulkIds.has(t.id))}
-          onClear={() => setSelectedBulkIds(new Set())}
-          onSuccess={handleBulkSuccess}
-        />
-      )}
-    </div>
-  );
-
-  const right = selectedTask ? (
-    <TaskDetailPanel
-      task={selectedTask}
-      onClose={() => {
-        setSelectedTaskId(null);
-        setIsRightPanelOpen(false);
-      }}
-      onTagClick={handleTagClick}
-    />
-  ) : (
-    <EmptyState
-      icon={MousePointerClick}
-      heading="Select a task to see details"
-      description="Click on any task in the list to view and edit its details here."
-      action={{ label: 'Connect your first agent →', href: '/settings' }}
-    />
-  );
 
   return (
     <>
-      <ThreeColumnShell
-        leftNav={leftNav}
-        middle={middle}
-        right={right}
-        isRightPanelOpen={effectiveRightPanelOpen}
-        onRightPanelOpenChange={setIsRightPanelOpen}
-        sheetTitle={selectedTask?.title ?? 'Task Details'}
-      />
+      <div className="flex flex-col h-full">
+        {/* Quick add bar */}
+        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-2">
+          <QuickAddBar
+            onOpenFullForm={() => setIsCreationDialogOpen(true)}
+            onTaskCreated={handleTaskCreated}
+          />
+        </div>
+
+        {/* Filter chip bar */}
+        <FilterChipBar filters={filters} onChange={setFilters} availableTags={availableTags ?? []} />
+
+        {/* Task list */}
+        {isPending ? (
+          <div className="flex-1 overflow-y-auto divide-y divide-border">
+            <TaskRowSkeleton />
+            <TaskRowSkeleton />
+            <TaskRowSkeleton />
+            <TaskRowSkeleton />
+            <TaskRowSkeleton />
+          </div>
+        ) : tasks.length === 0 ? (
+          isNonDefault(filters) ? (
+            <EmptyState
+              icon={Search}
+              heading="No tasks match your filters"
+              description="Try adjusting or clearing your filters to see more tasks."
+            >
+              <button
+                type="button"
+                onClick={() => setFilters({ ...DEFAULT_FILTERS })}
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+              >
+                Clear filters
+              </button>
+            </EmptyState>
+          ) : (
+            <EmptyState
+              icon={ListTodo}
+              heading="Your task list is empty"
+              description="Ask your AI agent to get started — copy a prompt below and paste it into your chat"
+              action={{ label: 'Connect an agent →', href: '/settings' }}
+            >
+              <div className="flex flex-col gap-2 w-full items-center">
+                {ONBOARDING_PROMPTS.map((prompt) => (
+                  <CopyablePromptBlock key={prompt} prompt={prompt} />
+                ))}
+              </div>
+            </EmptyState>
+          )
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <VirtualTaskList
+              tasks={orderedTasks}
+              selectedTaskId={selectedTaskId}
+              highlightedTaskId={newTaskId}
+              selectedBulkIds={selectedBulkIds}
+              onSelect={handleSelectTask}
+              onBulkSelect={handleBulkSelect}
+              onTagClick={handleTagClick}
+            />
+            <DragOverlay>
+              {activeDragTask && (
+                <div className="shadow-lg rounded bg-background border border-border opacity-95">
+                  <TaskRow
+                    task={activeDragTask}
+                    selected={false}
+                    onSelect={() => {}}
+                  />
+                </div>
+              )}
+            </DragOverlay>
+          </DndContext>
+        )}
+
+        {/* Bulk action bar — appears at bottom when ≥2 tasks selected */}
+        {selectedBulkIds.size >= 2 && (
+          <BulkActionBar
+            selectedIds={Array.from(selectedBulkIds)}
+            selectedTasks={orderedTasks.filter((t) => selectedBulkIds.has(t.id))}
+            onClear={() => setSelectedBulkIds(new Set())}
+            onSuccess={handleBulkSuccess}
+          />
+        )}
+        {/* Task detail panel — rendered inline until Story 4.5 re-implements Sheet behavior */}
+        {isRightPanelOpen && selectedTask && (
+          <TaskDetailPanel
+            task={selectedTask}
+            onClose={() => {
+              setSelectedTaskId(null);
+              setIsRightPanelOpen(false);
+            }}
+            onTagClick={handleTagClick}
+          />
+        )}
+      </div>
+
       <TaskCreationDialog
         open={isCreationDialogOpen}
         onOpenChange={setIsCreationDialogOpen}

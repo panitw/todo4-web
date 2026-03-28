@@ -1,0 +1,77 @@
+'use client';
+
+import { useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
+import { Bell, Search } from 'lucide-react';
+import { MobileTopBar } from '@/components/layout/mobile-top-bar';
+
+const DesktopSidebar = dynamic(
+  () => import('@/components/layout/desktop-sidebar').then((m) => m.DesktopSidebar),
+  { ssr: false },
+);
+
+const BottomTabBar = dynamic(
+  () => import('@/components/layout/bottom-tab-bar').then((m) => m.BottomTabBar),
+  { ssr: false },
+);
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const mainRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
+
+  // P-2: Reset scroll position on view switch (AC6)
+  useEffect(() => {
+    mainRef.current?.scrollTo(0, 0);
+  }, [pathname]);
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* Desktop sidebar — hidden below md (768px) */}
+      <aside className="hidden md:flex md:w-60 md:shrink-0 md:flex-col">
+        <DesktopSidebar />
+      </aside>
+
+      {/* Content area */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile top bar — visible below md */}
+        <div className="md:hidden">
+          <MobileTopBar />
+        </div>
+
+        {/* Main content — with bottom padding on mobile for tab bar */}
+        <main ref={mainRef} className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-[960px] h-full px-4 md:px-8 pb-14 md:pb-0">
+            {/* Desktop top bar — inside 960px content area (IG-2) */}
+            <header className="hidden md:flex items-center gap-4 py-3 border-b border-border">
+              <div className="flex-1 relative">
+                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search tasks..."
+                  aria-label="Search tasks"
+                  className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  readOnly
+                />
+              </div>
+              <button type="button" aria-label="Notifications" className="relative text-muted-foreground">
+                <Bell size={20} />
+                <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground">
+                  0
+                </span>
+              </button>
+              <div className="h-8 w-8 rounded-full bg-muted" aria-label="User avatar" />
+            </header>
+
+            {children}
+          </div>
+        </main>
+
+        {/* Mobile bottom tab bar — visible below md */}
+        <div className="md:hidden fixed bottom-0 inset-x-0 z-50">
+          <BottomTabBar />
+        </div>
+      </div>
+    </div>
+  );
+}

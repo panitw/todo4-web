@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
-import { ThreeColumnShell } from '@/components/layout/three-column-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -526,11 +525,17 @@ export default function SettingsPage() {
   }
 
   return (
-    <ThreeColumnShell
-      leftNav={
+    <div className="flex h-full">
+      <aside className="hidden md:block w-56 shrink-0 border-r border-border">
         <SettingsNav active={activeSection} onChange={setActiveSection} />
-      }
-      middle={renderSection()}
-    />
+      </aside>
+      <div className="flex-1 overflow-y-auto">
+        {/* Mobile settings nav */}
+        <div className="md:hidden border-b border-border">
+          <SettingsNav active={activeSection} onChange={setActiveSection} />
+        </div>
+        {renderSection()}
+      </div>
+    </div>
   );
 }

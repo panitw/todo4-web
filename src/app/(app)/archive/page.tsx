@@ -1,8 +1,6 @@
 'use client';
 
 import { Archive } from 'lucide-react';
-import { ThreeColumnShell } from '@/components/layout/three-column-shell';
-import { AppLeftNav } from '@/components/shared/app-left-nav';
 import { EmptyState } from '@/components/shared/empty-state';
 import { useTasks } from '@/hooks/use-tasks';
 import { TaskRow } from '@/components/tasks/task-row';
@@ -24,9 +22,7 @@ export default function ArchivePage() {
     setIsRightPanelOpen(true);
   }
 
-  const leftNav = <AppLeftNav />;
-
-  const middle = (
+  return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-3">
         <h1 className="text-lg font-semibold">Archive</h1>
@@ -64,36 +60,17 @@ export default function ArchivePage() {
           ))}
         </div>
       )}
+
+      {/* Task detail panel — rendered inline until Story 4.5 re-implements Sheet behavior */}
+      {isRightPanelOpen && selectedTask && (
+        <TaskDetailPanel
+          task={selectedTask}
+          onClose={() => {
+            setSelectedTaskId(null);
+            setIsRightPanelOpen(false);
+          }}
+        />
+      )}
     </div>
-  );
-
-  const effectiveRightPanelOpen = isRightPanelOpen && !!selectedTask;
-
-  const right = selectedTask ? (
-    <TaskDetailPanel
-      task={selectedTask}
-      onClose={() => {
-        setSelectedTaskId(null);
-        setIsRightPanelOpen(false);
-      }}
-    />
-  ) : (
-    <EmptyState
-      icon={Archive}
-      heading="Select a task to see details"
-      description="Click on any archived task to view its details."
-      action={{ label: 'Connect your first agent →', href: '/settings' }}
-    />
-  );
-
-  return (
-    <ThreeColumnShell
-      leftNav={leftNav}
-      middle={middle}
-      right={right}
-      isRightPanelOpen={effectiveRightPanelOpen}
-      onRightPanelOpenChange={setIsRightPanelOpen}
-      sheetTitle={selectedTask?.title ?? 'Task Details'}
-    />
   );
 }

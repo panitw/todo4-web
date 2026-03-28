@@ -22,10 +22,13 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
+import { ListTodo, MousePointerClick, Search } from 'lucide-react';
 import { ThreeColumnShell } from '@/components/layout/three-column-shell';
 import { AppLeftNav } from '@/components/shared/app-left-nav';
+import { EmptyState } from '@/components/shared/empty-state';
+import { CopyablePromptBlock } from '@/components/shared/copyable-prompt-block';
 import { TaskRow } from '@/components/tasks/task-row';
-import { FilterChipBar, type TaskFilters } from '@/components/tasks/filter-chip-bar';
+import { FilterChipBar, DEFAULT_FILTERS, isNonDefault, type TaskFilters } from '@/components/tasks/filter-chip-bar';
 import { QuickAddBar } from '@/components/tasks/quick-add-bar';
 import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
 import { TaskDetailPanel } from '@/components/tasks/task-detail-panel';
@@ -35,6 +38,13 @@ import { useTags } from '@/hooks/use-tags';
 import { useTask } from '@/hooks/use-task';
 import { useUpdateTask } from '@/hooks/use-update-task';
 import type { Task } from '@/lib/api/tasks';
+
+const ONBOARDING_PROMPTS = [
+  'Create a task called \'Review weekly goals\' with priority p2, due next Monday',
+  'Add a task \'Research competitors\' with subtasks: check pricing, compare features, write summary',
+  'Show me all my open tasks sorted by priority',
+  'Create a recurring task \'Weekly team standup notes\' that repeats every Monday',
+];
 
 // Skeleton placeholder for loading state
 function TaskRowSkeleton() {
@@ -325,14 +335,34 @@ export default function TasksPage() {
           <TaskRowSkeleton />
         </div>
       ) : tasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-1 py-16 px-6 text-center gap-3">
-          <p className="text-lg font-medium text-muted-foreground">
-            Your task list is empty
-          </p>
-          <p className="text-sm text-muted-foreground/70">
-            Connect an AI agent to start adding tasks, or adjust your filters above.
-          </p>
-        </div>
+        isNonDefault(filters) ? (
+          <EmptyState
+            icon={Search}
+            heading="No tasks match your filters"
+            description="Try adjusting or clearing your filters to see more tasks."
+          >
+            <button
+              type="button"
+              onClick={() => setFilters({ ...DEFAULT_FILTERS })}
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+            >
+              Clear filters
+            </button>
+          </EmptyState>
+        ) : (
+          <EmptyState
+            icon={ListTodo}
+            heading="Your task list is empty"
+            description="Ask your AI agent to get started — copy a prompt below and paste it into your chat"
+            action={{ label: 'Connect an agent →', href: '/settings' }}
+          >
+            <div className="flex flex-col gap-2 w-full items-center">
+              {ONBOARDING_PROMPTS.map((prompt) => (
+                <CopyablePromptBlock key={prompt} prompt={prompt} />
+              ))}
+            </div>
+          </EmptyState>
+        )
       ) : (
         <DndContext
           sensors={sensors}
@@ -385,9 +415,12 @@ export default function TasksPage() {
       onTagClick={handleTagClick}
     />
   ) : (
-    <div className="flex items-center justify-center h-full text-sm text-muted-foreground p-6">
-      <p>Select a task to see details</p>
-    </div>
+    <EmptyState
+      icon={MousePointerClick}
+      heading="Select a task to see details"
+      description="Click on any task in the list to view and edit its details here."
+      action={{ label: 'Connect your first agent →', href: '/settings' }}
+    />
   );
 
   return (

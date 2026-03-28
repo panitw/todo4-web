@@ -19,6 +19,14 @@ interface FilterChipBarProps {
 
 const DEFAULT_PRIORITY: TaskFilters['priority'] = [];
 
+export const DEFAULT_FILTERS: TaskFilters = {
+  priority: [...DEFAULT_PRIORITY],
+  status: [],
+  tags: [],
+  dueAfter: '',
+  dueBefore: '',
+};
+
 const PRIORITIES: { value: 'p1' | 'p2' | 'p3' | 'p4'; label: string }[] = [
   { value: 'p1', label: 'P1' },
   { value: 'p2', label: 'P2' },
@@ -35,7 +43,7 @@ const STATUSES: { value: string; label: string }[] = [
   { value: 'archived', label: 'Archived' },
 ];
 
-function isNonDefault(filters: TaskFilters): boolean {
+export function isNonDefault(filters: TaskFilters): boolean {
   const priorityDiffers =
     filters.priority.length !== DEFAULT_PRIORITY.length ||
     !DEFAULT_PRIORITY.every((p) => filters.priority.includes(p));

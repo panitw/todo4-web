@@ -95,13 +95,13 @@ export function SubtaskPanel({ taskId }: { taskId: string }) {
   const [newTitle, setNewTitle] = useState('');
   const [localSubtasks, setLocalSubtasks] = useState<Subtask[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { data: subtasks = [], isLoading } = useSubtasks(taskId);
+  const { data: subtasks, isLoading } = useSubtasks(taskId);
   const { mutate: createMutate, isPending: isCreating } = useCreateSubtask(taskId);
   const { mutate: updateMutate } = useUpdateSubtask(taskId);
   const { mutate: deleteMutate } = useDeleteSubtask(taskId);
 
   useEffect(() => {
-    setLocalSubtasks(subtasks);
+    if (subtasks) setLocalSubtasks(subtasks);
   }, [subtasks]);
 
   const sensors = useSensors(

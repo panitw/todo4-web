@@ -3,9 +3,10 @@
 import { useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
-import { Bell, Search } from 'lucide-react';
+import { Bell, Plus, Search } from 'lucide-react';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { useSearch } from '@/providers/search-provider';
+import { useCreateTaskAction } from '@/providers/create-task-provider';
 
 const DesktopSidebar = dynamic(
   () => import('@/components/layout/desktop-sidebar').then((m) => m.DesktopSidebar),
@@ -21,6 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
   const { query, setQuery, active: searchActive } = useSearch();
+  const { active: createTaskActive, trigger: triggerCreateTask } = useCreateTaskAction();
 
   // P-2: Reset scroll position on view switch (AC6)
   useEffect(() => {
@@ -52,12 +54,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   type="text"
                   placeholder="Search tasks..."
                   aria-label="Search tasks"
-                  className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring"
                   value={searchActive ? query : ''}
                   onChange={(e) => setQuery(e.target.value)}
                   readOnly={!searchActive}
                 />
               </div>
+              {createTaskActive && (
+                <button
+                  type="button"
+                  onClick={triggerCreateTask}
+                  className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-85 active:opacity-75"
+                  style={{ backgroundImage: 'linear-gradient(135deg, #7c3aed, #3b82f6)' }}
+                >
+                  <Plus className="h-4 w-4" />
+                  New Task
+                </button>
+              )}
               <button type="button" aria-label="Notifications" className="relative text-muted-foreground">
                 <Bell size={20} />
                 <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground">

@@ -5,6 +5,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -36,16 +37,18 @@ export function ViewSettingsButton({ groupBy, onGroupByChange }: ViewSettingsBut
         <span>View</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          Group by
-        </DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={groupBy} onValueChange={(v) => onGroupByChange(v as GroupByOption)}>
-          {GROUP_BY_OPTIONS.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Group by
+          </DropdownMenuLabel>
+          <DropdownMenuRadioGroup value={groupBy} onValueChange={(v) => onGroupByChange(v as GroupByOption)}>
+            {GROUP_BY_OPTIONS.map((option) => (
+              <DropdownMenuRadioItem key={option.value} value={option.value}>
+                {option.label}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { MoreVertical, Calendar, Bot } from 'lucide-react';
+import { MoreVertical, Calendar, Bot, Check as CheckIcon } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -219,18 +219,30 @@ export function TaskCard({
             )}
 
             {/* Completion checkbox — 20px visual, 44px hit area via after pseudo */}
-            <Checkbox
-              checked={completed}
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={completed}
               aria-label={`Mark ${task.title} as complete`}
               onClick={(e) => {
                 e.stopPropagation();
                 onCheckboxToggle?.(task.id);
               }}
               className={cn(
-                'shrink-0 size-5 border-[1.5px] border-[#cbd5e1] rounded after:absolute after:-inset-3',
-                completed && 'data-checked:bg-green-600 data-checked:border-green-600',
+                'group/check relative flex items-center justify-center shrink-0 size-5 border-[1.5px] rounded transition-colors after:absolute after:-inset-3',
+                completed
+                  ? 'bg-green-600 border-green-600 text-white hover:bg-gray-100 hover:border-gray-400 hover:text-gray-400 active:bg-gray-500 active:border-gray-500 active:text-white'
+                  : 'border-[#cbd5e1] hover:border-gray-400 active:border-green-600 active:bg-green-600',
               )}
-            />
+            >
+              {completed && <CheckIcon className="size-3.5" />}
+              {!completed && (
+                <>
+                  <CheckIcon className="size-3.5 text-gray-400 opacity-0 group-hover/check:opacity-100 group-active/check:opacity-0" />
+                  <CheckIcon className="size-3.5 text-white absolute opacity-0 group-active/check:opacity-100" />
+                </>
+              )}
+            </button>
           </div>
 
           {/* Right column: title row + bottom row (naturally aligned) */}

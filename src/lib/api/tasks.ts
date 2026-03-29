@@ -9,6 +9,7 @@ export interface CreateTaskInput {
   title: string;
   description?: string;
   priority?: 'p1' | 'p2' | 'p3' | 'p4';
+  status?: 'open' | 'in_progress';
   dueDate?: string; // ISO 8601, e.g. "2026-03-25"
   tags?: string[];
   recurrence?: 'daily' | 'weekly' | 'monthly' | null;
@@ -78,6 +79,7 @@ export interface UpdateTaskInput {
   title?: string;
   description?: string;
   priority?: 'p1' | 'p2' | 'p3' | 'p4';
+  status?: 'open' | 'in_progress';
   dueDate?: string | null; // ISO 8601 or null to clear
   tags?: string[];
   recurrence?: 'daily' | 'weekly' | 'monthly' | null;

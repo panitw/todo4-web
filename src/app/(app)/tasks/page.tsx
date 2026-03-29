@@ -23,6 +23,7 @@ import {
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { ListTodo, Search, X } from 'lucide-react';
+// Plus icon removed — "New Task" button now lives in layout header
 import { EmptyState } from '@/components/shared/empty-state';
 import { CopyablePromptBlock } from '@/components/shared/copyable-prompt-block';
 import { TaskCard } from '@/components/tasks/task-card';
@@ -30,15 +31,18 @@ import { FilterBar, DEFAULT_FILTERS, isNonDefault, type TaskFilters } from '@/co
 import { StatusTabs } from '@/components/tasks/status-tabs';
 import { ViewSettingsButton, type GroupByOption } from '@/components/tasks/view-settings-button';
 import { GroupHeader } from '@/components/tasks/group-header';
-import { QuickAddBar } from '@/components/tasks/quick-add-bar';
+import { Fab } from '@/components/tasks/fab';
 import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
+// QuickAddBar removed — replaced by FAB (mobile) + "New Task" button (desktop) + C shortcut
 import { TaskDetailPanel } from '@/components/tasks/task-detail-panel';
 import { BulkActionBar } from '@/components/tasks/bulk-action-bar';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useTasks } from '@/hooks/use-tasks';
 import { useTask } from '@/hooks/use-task';
 import { useUpdateTask } from '@/hooks/use-update-task';
 import { useCloseTask } from '@/hooks/use-close-task';
 import { useSearch } from '@/providers/search-provider';
+import { useCreateTaskAction } from '@/providers/create-task-provider';
 import { buildVirtualItems, type VirtualItem, type VirtualTaskItem } from '@/lib/group-tasks';
 import type { Task } from '@/lib/api/tasks';
 
@@ -266,10 +270,11 @@ export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFilters>({
     ...DEFAULT_FILTERS,
+    status: ['open', 'in_progress'],
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [groupBy, setGroupBy] = useState<GroupByOption>('none');
-  const [activeStatusTab, setActiveStatusTab] = useState<string | null>(null);
+  const [activeStatusTab, setActiveStatusTab] = useState<string | null>('active');
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
   const [newTaskId, setNewTaskId] = useState<string | null>(null);
@@ -284,6 +289,7 @@ export default function TasksPage() {
   const { mutate: updateTaskMutate, isPending: isReorderPending } = useUpdateTask();
   const { mutate: closeTaskMutate } = useCloseTask();
   const { register: registerSearch, setQuery: setSearchContextQuery } = useSearch();
+  const { register: registerCreateTask } = useCreateTaskAction();
 
   // Register with search context so the layout's top bar search works
   const handleSearchChange = useCallback((search: string) => {
@@ -296,6 +302,16 @@ export default function TasksPage() {
     return unregister;
   }, [registerSearch, handleSearchChange]);
 
+  // Register with create-task context so the layout header button works
+  const handleCreateTask = useCallback(() => {
+    setIsCreationDialogOpen(true);
+  }, []);
+
+  useEffect(() => {
+    const unregister = registerCreateTask(handleCreateTask);
+    return unregister;
+  }, [registerCreateTask, handleCreateTask]);
+
   // Sync search context query when clearing filters
   const clearSearch = useCallback(() => {
     setSearchContextQuery('');
@@ -307,31 +323,22 @@ export default function TasksPage() {
     setTimeout(() => setNewTaskId(null), 1500);
   }
 
-  // StatusTabs → filters sync: when a status tab is clicked, update filters.status
-  const handleStatusTabChange = useCallback((status: string | null) => {
-    setActiveStatusTab(status);
+  // StatusTabs → filters sync: when a tab is clicked, update filters.status with the tab's statuses
+  const handleStatusTabChange = useCallback((tab: string | null, statuses: string[]) => {
+    setActiveStatusTab(tab);
     setFilters((prev) => ({
       ...prev,
-      status: status ? [status] : [],
+      status: statuses,
     }));
   }, []);
 
-  // When filter chips remove a status, sync back to status tabs
+  // When filter chips change, preserve the active tab's status filter
   const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
-    setFilters(newFilters);
-    // If status filter is empty or changed, update active tab
-    if (newFilters.status.length === 0) {
-      setActiveStatusTab(null);
-    } else if (newFilters.status.length === 1) {
-      const s = newFilters.status[0];
-      if (s === 'open' || s === 'in_progress' || s === 'closed') {
-        setActiveStatusTab(s);
-      } else {
-        setActiveStatusTab(null);
-      }
-    } else {
-      setActiveStatusTab(null);
-    }
+    setFilters((prev) => ({
+      ...newFilters,
+      // Preserve current status filter (controlled by tabs, not filter bar)
+      status: prev.status,
+    }));
   }, []);
 
   const { data, isPending } = useTasks({
@@ -468,29 +475,38 @@ export default function TasksPage() {
   function handleTagClick(tagName: string) {
     setFilters((prev) => {
       const newTags = prev.tags.includes(tagName) ? prev.tags : [...prev.tags, tagName];
-      // Sync tag filters to URL
+      return { ...prev, tags: newTags };
+    });
+    // Sync tag filters to URL outside of setState
+    setTimeout(() => {
       const params = new URLSearchParams(window.location.search);
-      if (newTags.length > 0) {
-        params.set('tag', newTags.join(','));
+      const currentTags = filters.tags.includes(tagName) ? filters.tags : [...filters.tags, tagName];
+      if (currentTags.length > 0) {
+        params.set('tag', currentTags.join(','));
       } else {
         params.delete('tag');
       }
       const qs = params.toString();
       window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
-      return { ...prev, tags: newTags };
-    });
+    }, 0);
   }
 
-  // Checkbox toggle: close task (no-op if already closed/archived)
+  // Checkbox toggle: close task, or reopen if already closed
   const handleCheckboxToggle = useCallback((id: string) => {
     const task = orderedTasks.find((t) => t.id === id);
-    if (!task) return;
-    if (task.status === 'closed' || task.status === 'archived') return;
-    closeTaskMutate({ id }, {
-      onSuccess: () => toast.success('Task closed'),
-      onError: () => toast.error('Failed to close task'),
-    });
-  }, [orderedTasks, closeTaskMutate]);
+    if (!task || task.status === 'archived') return;
+    if (task.status === 'closed') {
+      updateTaskMutate({ id, data: { status: 'open' } }, {
+        onSuccess: () => toast.success('Task reopened'),
+        onError: () => toast.error('Failed to reopen task'),
+      });
+    } else {
+      closeTaskMutate({ id, force: true }, {
+        onSuccess: () => toast.success('Task done'),
+        onError: () => toast.error('Failed to close task'),
+      });
+    }
+  }, [orderedTasks, closeTaskMutate, updateTaskMutate]);
 
   // Inline title editing
   const handleTitleSave = useCallback((id: string, newTitle: string) => {
@@ -519,13 +535,25 @@ export default function TasksPage() {
     focusedIndexRef.current = safeFocusedIndex;
   }, [safeFocusedIndex]);
 
-  // Keyboard navigation: Arrow keys, Enter, Space, F2, Escape
+  // Keyboard navigation: Arrow keys, Enter, Space, F2, Escape, C (create)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Don't fire when an interactive element is focused
       const target = e.target as HTMLElement;
       const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      // Also skip if inside a dialog/sheet overlay
+      if (target?.closest('[data-slot="sheet-content"]')) return;
+
+      // C shortcut to open creation panel (desktop)
+      if (e.key === 'c' || e.key === 'C') {
+        if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+          e.preventDefault();
+          setIsCreationDialogOpen(true);
+          return;
+        }
+      }
+
       // For Space key, only intercept on body/task-list to avoid hijacking buttons/links
       if (e.key === ' ' && tag !== 'BODY' && !target?.closest('[role="list"]')) return;
       if (taskOnlyItems.length === 0) return;
@@ -586,7 +614,7 @@ export default function TasksPage() {
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
             type="text"
-            placeholder="Search tasks\u2026"
+            placeholder="Search tasks..."
             aria-label="Search tasks"
             value={searchQuery}
             onChange={(e) => {
@@ -609,21 +637,13 @@ export default function TasksPage() {
         </div>
 
         {/* Status tabs + View settings row */}
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
-          <StatusTabs activeStatus={activeStatusTab} onStatusChange={handleStatusTabChange} />
+        <div className="flex items-center justify-between px-3 border-b border-border">
+          <StatusTabs activeTab={activeStatusTab} onTabChange={handleStatusTabChange} />
           <ViewSettingsButton groupBy={groupBy} onGroupByChange={setGroupBy} />
         </div>
 
         {/* Filter chips (priority, tags) */}
         <FilterBar filters={filters} onChange={handleFiltersChange} onClearAll={clearSearch} />
-
-        {/* Quick add bar — right above the task list */}
-        <div className="border-b border-border px-4 py-2">
-          <QuickAddBar
-            onOpenFullForm={() => setIsCreationDialogOpen(true)}
-            onTaskCreated={handleTaskCreated}
-          />
-        </div>
 
         {/* Task list */}
         {isPending ? (
@@ -716,18 +736,35 @@ export default function TasksPage() {
             onSuccess={handleBulkSuccess}
           />
         )}
-        {/* Task detail panel */}
-        {isRightPanelOpen && selectedTask && (
-          <TaskDetailPanel
-            task={selectedTask}
-            onClose={() => {
-              setSelectedTaskId(null);
-              setIsRightPanelOpen(false);
-            }}
-            onTagClick={handleTagClick}
-          />
-        )}
+
+        {/* FAB — mobile only */}
+        <Fab onClick={() => setIsCreationDialogOpen(true)} />
+
       </div>
+
+      {/* Task detail panel in Sheet */}
+      <Sheet
+        open={isRightPanelOpen && !!selectedTask}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedTaskId(null);
+            setIsRightPanelOpen(false);
+          }
+        }}
+      >
+        <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md lg:max-w-lg p-0">
+          {selectedTask && (
+            <TaskDetailPanel
+              task={selectedTask}
+              onClose={() => {
+                setSelectedTaskId(null);
+                setIsRightPanelOpen(false);
+              }}
+              onTagClick={handleTagClick}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
 
       <TaskCreationDialog
         open={isCreationDialogOpen}

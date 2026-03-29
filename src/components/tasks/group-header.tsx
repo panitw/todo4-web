@@ -14,12 +14,12 @@ export function GroupHeader({ label, colorClass }: GroupHeaderProps) {
       <span
         className={cn(
           'text-[13px] font-semibold uppercase tracking-wide whitespace-nowrap shrink-0',
-          colorClass ?? 'text-muted-foreground',
+          colorClass ?? 'text-indigo-400',
         )}
       >
         {label}
       </span>
-      <span className="flex-1 h-px bg-border" aria-hidden="true" />
+      <span className="flex-1 h-px bg-indigo-200" aria-hidden="true" />
     </div>
   );
 }

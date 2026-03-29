@@ -1,14 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Loader2, X } from 'lucide-react';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,9 +14,10 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { useCreateTask } from '@/hooks/use-create-task';
+import { useTags } from '@/hooks/use-tags';
 import type { CreateTaskInput } from '@/lib/api/tasks';
 
 interface TaskCreationDialogProps {
@@ -32,21 +30,43 @@ interface FormState {
   title: string;
   description: string;
   priority: 'p1' | 'p2' | 'p3' | 'p4';
+  status: 'open' | 'in_progress';
   dueDate: string;
-  tags: string;
-  recurrence: 'none' | 'daily' | 'weekly' | 'monthly';
-  referenceUrl: string;
+  tagInput: string;
+  tags: string[];
 }
+
+interface FormErrors {
+  title?: string;
+  description?: string;
+  tagInput?: string;
+}
+
+const PRIORITY_LABELS: Record<string, string> = { p1: 'Critical', p2: 'High', p3: 'Medium', p4: 'Low' };
+const PRIORITY_COLORS: Record<string, string> = { p1: 'text-red-600', p2: 'text-orange-500', p3: 'text-blue-500', p4: 'text-gray-400' };
+const STATUS_CONFIG: Record<string, { dot: string; border: string; label: string }> = {
+  open: { dot: 'bg-slate-300 border-slate-400', border: 'border-slate-400', label: 'To Do' },
+  in_progress: { dot: 'bg-blue-500', border: 'border-transparent', label: 'In Progress' },
+};
 
 const defaultForm: FormState = {
   title: '',
   description: '',
-  priority: 'p4',
+  priority: 'p3',
+  status: 'open',
   dueDate: '',
-  tags: '',
-  recurrence: 'none',
-  referenceUrl: '',
+  tagInput: '',
+  tags: [],
 };
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <h3 className="text-[13px] font-semibold text-indigo-400 uppercase tracking-wide whitespace-nowrap shrink-0">{children}</h3>
+      <span className="flex-1 h-px bg-indigo-200" aria-hidden="true" />
+    </div>
+  );
+}
 
 export function TaskCreationDialog({
   open,
@@ -54,212 +74,243 @@ export function TaskCreationDialog({
   onTaskCreated,
 }: TaskCreationDialogProps) {
   const [form, setForm] = useState<FormState>(defaultForm);
-  const [titleError, setTitleError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const { mutate, isPending, error } = useCreateTask();
+  const { data: existingTags } = useTags();
+  const titleRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (open) triggerRef.current = document.activeElement as HTMLElement;
+  }, [open]);
+
+  useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => titleRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   function handleChange(field: keyof FormState, value: string | null) {
     if (value === null) return;
     setForm((prev) => ({ ...prev, [field]: value }));
+    if (field in errors) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
+
+  function validateField(field: string, value: string): string | undefined {
+    switch (field) {
+      case 'title':
+        if (!value.trim()) return 'Title is required';
+        if (value.length > 500) return `Title must not exceed 500 characters (${value.length}/500)`;
+        return undefined;
+      case 'description':
+        if (value.length > 10000) return `Description must not exceed 10,000 characters`;
+        return undefined;
+      case 'tagInput':
+        if (value.length > 100) return 'Tag must not exceed 100 characters';
+        return undefined;
+      default:
+        return undefined;
+    }
+  }
+
+  function handleBlur(field: 'title' | 'description' | 'tagInput') {
+    const fieldError = validateField(field, form[field]);
+    setErrors((prev) => ({ ...prev, [field]: fieldError }));
+  }
+
+  function addTag(tagName: string) {
+    const trimmed = tagName.trim();
+    if (!trimmed || trimmed.length > 100 || form.tags.includes(trimmed)) return;
+    setForm((prev) => ({ ...prev, tags: [...prev.tags, trimmed], tagInput: '' }));
+    setShowTagSuggestions(false);
+  }
+
+  function removeTag(tagName: string) {
+    setForm((prev) => ({ ...prev, tags: prev.tags.filter((t) => t !== tagName) }));
+  }
+
+  function handleTagKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(form.tagInput); }
+    if (e.key === 'Backspace' && !form.tagInput && form.tags.length > 0) setForm((prev) => ({ ...prev, tags: prev.tags.slice(0, -1) }));
+    if (e.key === 'Escape') setShowTagSuggestions(false);
+  }
+
+  const tagSuggestions = existingTags?.filter(
+    (t) => t.name.toLowerCase().includes(form.tagInput.toLowerCase()) && !form.tags.includes(t.name),
+  ) ?? [];
 
   function resetForm() {
     setForm(defaultForm);
-    setTitleError(null);
+    setErrors({});
+    setShowTagSuggestions(false);
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.title.trim()) {
-      setTitleError('Title is required.');
-      return;
-    }
-    setTitleError(null);
+  function handleSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
+    const titleError = validateField('title', form.title);
+    const descError = validateField('description', form.description);
+    if (titleError || descError) { setErrors({ title: titleError, description: descError }); return; }
 
-    const parsedTags = form.tags
-      .split(',')
-      .map((t) => t.trim())
-      .filter((t) => t.length > 0);
-
-    const input: CreateTaskInput = {
-      title: form.title.trim(),
-    };
+    const input: CreateTaskInput = { title: form.title.trim() };
     if (form.description.trim()) input.description = form.description.trim();
-    if (form.priority !== 'p4') input.priority = form.priority;
+    if (form.priority !== 'p3') input.priority = form.priority;
+    if (form.status !== 'open') input.status = form.status;
     if (form.dueDate) input.dueDate = form.dueDate;
-    if (parsedTags.length > 0) input.tags = parsedTags;
-    if (form.recurrence !== 'none') input.recurrence = form.recurrence;
-    if (form.referenceUrl.trim()) input.referenceUrl = form.referenceUrl.trim();
+    if (form.tags.length > 0) input.tags = form.tags;
 
     mutate(input, {
-      onSuccess: (task) => {
-        onTaskCreated?.(task.id);
-        onOpenChange(false);
-        resetForm();
-      },
+      onSuccess: (task) => { onTaskCreated?.(task.id); onOpenChange(false); resetForm(); },
     });
   }
 
-  function handleCancel() {
+  function handleClose() {
     onOpenChange(false);
     resetForm();
+    setTimeout(() => triggerRef.current?.focus(), 50);
   }
 
-  const errorMessage =
-    error instanceof Error ? error.message : error ? String(error) : null;
-  const titleTooLong = form.title.length > 500;
-  const titleEmpty = form.title.trim().length === 0;
+  const errorMessage = error instanceof Error ? error.message : error ? String(error) : null;
+  const isValid = form.title.trim().length > 0 && form.title.length <= 500 && !errors.title && !errors.description;
+  const statusConfig = STATUS_CONFIG[form.status];
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) handleCancel();
-      }}
-    >
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create Task</DialogTitle>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
+      <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md lg:max-w-lg p-0 flex flex-col">
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Title */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="task-title" className="text-sm font-medium">
-              Title <span className="text-destructive">*</span>
-            </label>
-            <Input
-              id="task-title"
-              value={form.title}
-              onChange={(e) => handleChange('title', e.target.value)}
-              placeholder="Task title"
-              maxLength={500}
-              required
-            />
-            {titleError && (
-              <p className="text-xs text-destructive">{titleError}</p>
-            )}
-            {titleTooLong && (
-              <p className="text-xs text-destructive">
-                Title must not exceed 500 characters ({form.title.length}/500)
-              </p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="task-description" className="text-sm font-medium">
-              Description
-            </label>
-            <Textarea
-              id="task-description"
-              value={form.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Optional description"
-              rows={3}
-            />
-          </div>
-
-          {/* Priority and Recurrence row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Priority</label>
-              <Select
-                value={form.priority}
-                onValueChange={(v) => handleChange('priority', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="p1">P1 — Urgent</SelectItem>
-                  <SelectItem value="p2">P2 — High</SelectItem>
-                  <SelectItem value="p3">P3 — Medium</SelectItem>
-                  <SelectItem value="p4">P4 — Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium">Recurrence</label>
-              <Select
-                value={form.recurrence}
-                onValueChange={(v) => handleChange('recurrence', v)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Due Date */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="task-due-date" className="text-sm font-medium">
-              Due Date
-            </label>
-            <Input
-              id="task-due-date"
-              type="date"
-              value={form.dueDate}
-              onChange={(e) => handleChange('dueDate', e.target.value)}
-            />
-          </div>
-
-          {/* Tags */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="task-tags" className="text-sm font-medium">
-              Tags
-            </label>
-            <Input
-              id="task-tags"
-              value={form.tags}
-              onChange={(e) => handleChange('tags', e.target.value)}
-              placeholder="e.g. project:alpha, urgent"
-            />
-          </div>
-
-          {/* Reference URL */}
-          <div className="flex flex-col gap-1">
-            <label htmlFor="task-ref-url" className="text-sm font-medium">
-              Reference URL
-            </label>
-            <Input
-              id="task-ref-url"
-              type="url"
-              value={form.referenceUrl}
-              onChange={(e) => handleChange('referenceUrl', e.target.value)}
-              placeholder="https://..."
-            />
-          </div>
-
-          {errorMessage && (
-            <p className="text-sm text-destructive">{errorMessage}</p>
-          )}
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={isPending}
-            >
-              Cancel
+        {/* Top bar — matches detail panel */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <span className="text-sm font-medium text-foreground">New Task</span>
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="outline" onClick={handleClose} disabled={isPending}>Cancel</Button>
+            <Button size="sm" onClick={() => handleSubmit()} disabled={isPending || !isValid}>
+              {isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+              Create
             </Button>
-            <Button type="submit" disabled={isPending || titleTooLong || titleEmpty}>
-              {isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <button onClick={handleClose} aria-label="Close"
+              className="shrink-0 rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-1">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable content — same structure as detail panel */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-5 p-4">
+
+            {/* Title */}
+            <div className="flex flex-col gap-0.5">
+              <Input
+                ref={titleRef}
+                value={form.title}
+                onChange={(e) => handleChange('title', e.target.value)}
+                onBlur={() => handleBlur('title')}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); } }}
+                placeholder="Task title"
+                maxLength={500}
+                className="text-base font-semibold h-auto py-1.5 border-none shadow-none px-1 focus-visible:border-none placeholder:text-muted-foreground/60"
+                aria-required="true"
+                aria-invalid={!!errors.title}
+                aria-describedby={errors.title ? 'create-title-error' : undefined}
+              />
+              {errors.title && <p id="create-title-error" className="text-xs text-destructive px-1">{errors.title}</p>}
+            </div>
+
+            {/* Metadata row — matches detail panel */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Select value={form.status} onValueChange={(v) => handleChange('status', v)}>
+                <SelectTrigger className="w-auto h-7 text-xs">
+                  <span className={`inline-block w-2 h-2 rounded-full ${statusConfig.dot} border ${statusConfig.border}`} />
+                  <span>{statusConfig.label}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open"><span className="inline-block w-2 h-2 rounded-full bg-slate-300 border border-slate-400" /> To Do</SelectItem>
+                  <SelectItem value="in_progress"><span className="inline-block w-2 h-2 rounded-full bg-blue-500" /> In Progress</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={form.priority} onValueChange={(v) => handleChange('priority', v)}>
+                <SelectTrigger className="w-auto h-7 text-xs">
+                  <span className={PRIORITY_COLORS[form.priority]}>&#9679;</span>
+                  <span>{PRIORITY_LABELS[form.priority]}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="p1"><span className="text-red-600">&#9679;</span> Critical</SelectItem>
+                  <SelectItem value="p2"><span className="text-orange-500">&#9679;</span> High</SelectItem>
+                  <SelectItem value="p3"><span className="text-blue-500">&#9679;</span> Medium</SelectItem>
+                  <SelectItem value="p4"><span className="text-gray-400">&#9679;</span> Low</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                type="date"
+                value={form.dueDate}
+                onChange={(e) => handleChange('dueDate', e.target.value)}
+                className="w-36 h-7 text-xs"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <SectionHeader>Description</SectionHeader>
+              <Textarea
+                value={form.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                onBlur={() => handleBlur('description')}
+                placeholder="Add a description..."
+                rows={3}
+                className="resize-none text-sm"
+                aria-invalid={!!errors.description}
+                aria-describedby={errors.description ? 'create-desc-error' : undefined}
+              />
+              {errors.description && <p id="create-desc-error" className="text-xs text-destructive mt-1">{errors.description}</p>}
+            </div>
+
+            {/* Tags */}
+            <div>
+              <SectionHeader>Tags</SectionHeader>
+              <div className="flex flex-wrap items-center gap-1 rounded-lg border border-input bg-background px-3 py-2 min-h-[40px] focus-within:border-ring">
+                {form.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs gap-1">
+                    {tag}
+                    <button type="button" onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive" aria-label={`Remove tag ${tag}`}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+                <input
+                  type="text"
+                  value={form.tagInput}
+                  onChange={(e) => { handleChange('tagInput', e.target.value); setShowTagSuggestions(e.target.value.length > 0); }}
+                  onBlur={() => { handleBlur('tagInput'); setTimeout(() => setShowTagSuggestions(false), 200); }}
+                  onFocus={() => { if (form.tagInput.length > 0) setShowTagSuggestions(true); }}
+                  onKeyDown={handleTagKeyDown}
+                  placeholder={form.tags.length === 0 ? 'Type to search or create tags...' : ''}
+                  className="flex-1 min-w-[120px] bg-transparent text-sm outline-none border-none shadow-none focus:ring-0 focus:outline-none placeholder:text-muted-foreground"
+                  style={{ outline: 'none', boxShadow: 'none' }}
+                  aria-invalid={!!errors.tagInput}
+                  aria-describedby={errors.tagInput ? 'create-tag-error' : undefined}
+                />
+              </div>
+              {errors.tagInput && <p id="create-tag-error" className="text-xs text-destructive mt-1">{errors.tagInput}</p>}
+              {showTagSuggestions && tagSuggestions.length > 0 && (
+                <div className="border border-border rounded-md bg-background shadow-md max-h-32 overflow-y-auto mt-1">
+                  {tagSuggestions.slice(0, 8).map((tag) => (
+                    <button key={tag.name} type="button"
+                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors"
+                      onMouseDown={(e) => e.preventDefault()} onClick={() => addTag(tag.name)}
+                    >{tag.name}</button>
+                  ))}
+                </div>
               )}
-              Create Task
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            </div>
+
+            {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
+
+          </div>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

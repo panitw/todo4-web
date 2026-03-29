@@ -28,11 +28,10 @@ export function isNonDefault(filters: TaskFilters): boolean {
   const priorityDiffers =
     filters.priority.length !== DEFAULT_FILTERS.priority.length ||
     !DEFAULT_FILTERS.priority.every((p) => filters.priority.includes(p));
-  const hasStatus = filters.status.length > 0;
   const hasTags = filters.tags.length > 0;
   const hasDueRange = !!filters.dueAfter || !!filters.dueBefore;
   const hasSearch = filters.search.length > 0;
-  return priorityDiffers || hasStatus || hasTags || hasDueRange || hasSearch;
+  return priorityDiffers || hasTags || hasDueRange || hasSearch;
 }
 
 // --- Chip color configs ---

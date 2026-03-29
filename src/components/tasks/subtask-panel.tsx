@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { toast } from 'sonner';
 import {
   DndContext,
@@ -100,9 +100,11 @@ export function SubtaskPanel({ taskId }: { taskId: string }) {
   const { mutate: updateMutate } = useUpdateSubtask(taskId);
   const { mutate: deleteMutate } = useDeleteSubtask(taskId);
 
-  useEffect(() => {
+  const [prevSubtasks, setPrevSubtasks] = useState(subtasks);
+  if (subtasks !== prevSubtasks) {
+    setPrevSubtasks(subtasks);
     if (subtasks) setLocalSubtasks(subtasks);
-  }, [subtasks]);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor),

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
 
 const STATUS_TABS = [
@@ -10,6 +10,8 @@ const STATUS_TABS = [
 
 type StatusTabValue = (typeof STATUS_TABS)[number]['value'];
 
+const emptySubscribe = () => () => {};
+
 interface StatusTabsProps {
   activeTab: string | null;
   onTabChange: (tab: string | null, statuses: string[]) => void;
@@ -17,11 +19,7 @@ interface StatusTabsProps {
 
 export function StatusTabs({ activeTab, onTabChange }: StatusTabsProps) {
   const tabsRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
   function handleKeyDown(e: React.KeyboardEvent) {
     const currentIndex = STATUS_TABS.findIndex((t) => t.value === activeTab);

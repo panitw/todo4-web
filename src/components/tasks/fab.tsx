@@ -1,19 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Plus } from 'lucide-react';
+
+const emptySubscribe = () => () => {};
 
 interface FabProps {
   onClick: () => void;
 }
 
 export function Fab({ onClick }: FabProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-
     const viewport = window.visualViewport;
     if (!viewport) return;
 

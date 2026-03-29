@@ -429,7 +429,7 @@ interface TaskDetailPanelProps {
   onTagClick?: (tagName: string) => void;
 }
 
-export function TaskDetailPanel({ task, onClose, onTagClick }: TaskDetailPanelProps) {
+export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
   const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [showAgentNotes, setShowAgentNotes] = useState(false);

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { QueryProvider } from "@/providers/query-provider";
+import { SearchProvider } from "@/providers/search-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
@@ -33,7 +34,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <QueryProvider>
-          {children}
+          <SearchProvider>
+            {children}
+          </SearchProvider>
           <Toaster />
         </QueryProvider>
       </body>

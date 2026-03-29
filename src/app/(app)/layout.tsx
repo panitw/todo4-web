@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { Bell, Search } from 'lucide-react';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
+import { useSearch } from '@/providers/search-provider';
 
 const DesktopSidebar = dynamic(
   () => import('@/components/layout/desktop-sidebar').then((m) => m.DesktopSidebar),
@@ -19,6 +20,7 @@ const BottomTabBar = dynamic(
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
+  const { query, setQuery, active: searchActive } = useSearch();
 
   // P-2: Reset scroll position on view switch (AC6)
   useEffect(() => {
@@ -51,7 +53,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   placeholder="Search tasks..."
                   aria-label="Search tasks"
                   className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  readOnly
+                  value={searchActive ? query : ''}
+                  onChange={(e) => setQuery(e.target.value)}
+                  readOnly={!searchActive}
                 />
               </div>
               <button type="button" aria-label="Notifications" className="relative text-muted-foreground">

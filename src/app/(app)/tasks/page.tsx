@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 import {
@@ -22,20 +22,24 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
-import { ListTodo, Search } from 'lucide-react';
+import { ListTodo, Search, X } from 'lucide-react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { CopyablePromptBlock } from '@/components/shared/copyable-prompt-block';
 import { TaskCard } from '@/components/tasks/task-card';
-import { FilterChipBar, DEFAULT_FILTERS, isNonDefault, type TaskFilters } from '@/components/tasks/filter-chip-bar';
+import { FilterBar, DEFAULT_FILTERS, isNonDefault, type TaskFilters } from '@/components/tasks/filter-bar';
+import { StatusTabs } from '@/components/tasks/status-tabs';
+import { ViewSettingsButton, type GroupByOption } from '@/components/tasks/view-settings-button';
+import { GroupHeader } from '@/components/tasks/group-header';
 import { QuickAddBar } from '@/components/tasks/quick-add-bar';
 import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
 import { TaskDetailPanel } from '@/components/tasks/task-detail-panel';
 import { BulkActionBar } from '@/components/tasks/bulk-action-bar';
 import { useTasks } from '@/hooks/use-tasks';
-import { useTags } from '@/hooks/use-tags';
 import { useTask } from '@/hooks/use-task';
 import { useUpdateTask } from '@/hooks/use-update-task';
 import { useCloseTask } from '@/hooks/use-close-task';
+import { useSearch } from '@/providers/search-provider';
+import { buildVirtualItems, type VirtualItem, type VirtualTaskItem } from '@/lib/group-tasks';
 import type { Task } from '@/lib/api/tasks';
 
 const ONBOARDING_PROMPTS = [
@@ -75,10 +79,8 @@ function SortableTaskCard({
   virtualStart: number;
   measureRef: (el: Element | null) => void;
   dataIndex: number;
-} & Omit<React.ComponentProps<typeof TaskCard>, 'task' | 'dragHandleProps' | 'isDragging'>) {
+} & Omit<React.ComponentProps<typeof TaskCard>, 'task' | 'isDragging'>) {
   const {
-    attributes,
-    listeners,
     setNodeRef,
     transform,
     transition,
@@ -108,7 +110,6 @@ function SortableTaskCard({
     >
       <TaskCard
         task={task}
-        dragHandleProps={{ ...attributes, ...listeners } as React.HTMLAttributes<HTMLButtonElement>}
         isDragging={isDragging}
         {...taskCardProps}
       />
@@ -117,12 +118,13 @@ function SortableTaskCard({
 }
 
 function VirtualTaskList({
-  tasks,
+  virtualItems,
   selectedTaskId,
   highlightedTaskId,
   focusedIndex,
   editingTaskId,
   selectedBulkIds,
+  searchQuery,
   onSelect,
   onBulkSelect,
   onTagClick,
@@ -131,12 +133,13 @@ function VirtualTaskList({
   onEditCancel,
   scrollRef,
 }: {
-  tasks: Task[];
+  virtualItems: VirtualItem[];
   selectedTaskId: string | null;
   highlightedTaskId: string | null;
   focusedIndex: number;
   editingTaskId: string | null;
   selectedBulkIds: Set<string>;
+  searchQuery: string;
   onSelect: (id: string) => void;
   onBulkSelect: (id: string, checked: boolean) => void;
   onTagClick?: (tagName: string) => void;
@@ -147,34 +150,88 @@ function VirtualTaskList({
 }) {
   // eslint-disable-next-line react-hooks/incompatible-library -- useVirtualizer returns unstable refs by design
   const virtualizer = useVirtualizer({
-    count: tasks.length,
+    count: virtualItems.length,
     getScrollElement: () => scrollRef.current,
-    // Card heights: ~80px mobile, ~64px desktop. Use 80 as safe estimate.
-    estimateSize: () => 80,
+    estimateSize: (index) => {
+      const item = virtualItems[index];
+      return item.type === 'header' ? 32 : 80;
+    },
     overscan: 5,
     gap: 8,
   });
 
-  // Scroll focused item into view
-  useEffect(() => {
-    if (focusedIndex >= 0 && focusedIndex < tasks.length) {
-      virtualizer.scrollToIndex(focusedIndex, { align: 'auto' });
-    }
-  }, [focusedIndex, tasks.length, virtualizer]);
+  // Scroll focused item into view (map focusedIndex in task-only space to virtualItems index)
+  const taskOnlyItems = useMemo(
+    () => virtualItems.filter((item): item is VirtualTaskItem => item.type === 'task'),
+    [virtualItems],
+  );
 
-  const virtualItems = virtualizer.getVirtualItems();
+  useEffect(() => {
+    if (focusedIndex >= 0 && focusedIndex < taskOnlyItems.length) {
+      const focusedTaskId = taskOnlyItems[focusedIndex].id;
+      const vIdx = virtualItems.findIndex((item) => item.id === focusedTaskId);
+      if (vIdx >= 0) {
+        virtualizer.scrollToIndex(vIdx, { align: 'auto' });
+      }
+    }
+  }, [focusedIndex, taskOnlyItems, virtualItems, virtualizer]);
+
+  const virtualRows = virtualizer.getVirtualItems();
+
+  // Task IDs for SortableContext (only task items, not headers)
+  const sortableIds = useMemo(
+    () => virtualItems.filter((item) => item.type === 'task').map((item) => item.id),
+    [virtualItems],
+  );
+
+  // Track which task index each virtual item maps to (for focused state)
+  const taskIndexMap = useMemo(() => {
+    const map = new Map<string, number>();
+    let taskIdx = 0;
+    for (const item of virtualItems) {
+      if (item.type === 'task') {
+        map.set(item.id, taskIdx);
+        taskIdx++;
+      }
+    }
+    return map;
+  }, [virtualItems]);
 
   return (
-    <div ref={scrollRef} className="flex-1 overflow-y-auto">
-      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+    <div ref={scrollRef} className="flex-1 overflow-y-auto pt-2">
+      <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
         <ul
           role="list"
           aria-label="Task list"
           style={{ height: virtualizer.getTotalSize(), position: 'relative' }}
-          className="py-1"
+          className="pb-1"
         >
-          {virtualItems.map((virtualRow) => {
-            const task = tasks[virtualRow.index];
+          {virtualRows.map((virtualRow) => {
+            const item = virtualItems[virtualRow.index];
+
+            if (item.type === 'header') {
+              return (
+                <li
+                  key={item.id}
+                  ref={virtualizer.measureElement}
+                  data-index={virtualRow.index}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    transform: `translate3d(0px, ${virtualRow.start}px, 0)`,
+                  }}
+                  className="px-1"
+                >
+                  <GroupHeader label={item.label} colorClass={item.colorClass} />
+                </li>
+              );
+            }
+
+            const task = item.task;
+            const taskIdx = taskIndexMap.get(item.id) ?? -1;
+
             return (
               <SortableTaskCard
                 key={task.id}
@@ -184,8 +241,9 @@ function VirtualTaskList({
                 dataIndex={virtualRow.index}
                 selected={task.id === selectedTaskId}
                 highlighted={task.id === highlightedTaskId}
-                focused={virtualRow.index === focusedIndex}
+                focused={taskIdx === focusedIndex}
                 editing={task.id === editingTaskId}
+                searchQuery={searchQuery}
                 isBulkSelected={selectedBulkIds.has(task.id)}
                 isBulkMode={selectedBulkIds.size > 0}
                 onSelect={onSelect}
@@ -206,12 +264,11 @@ function VirtualTaskList({
 export default function TasksPage() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFilters>({
-    priority: ['p1', 'p2'], // default: show high-priority tasks (P1+P2)
-    status: [],
-    tags: [],
-    dueAfter: '',
-    dueBefore: '',
+    ...DEFAULT_FILTERS,
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [groupBy, setGroupBy] = useState<GroupByOption>('none');
+  const [activeStatusTab, setActiveStatusTab] = useState<string | null>(null);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
   const [newTaskId, setNewTaskId] = useState<string | null>(null);
@@ -221,16 +278,60 @@ export default function TasksPage() {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const focusedIndexRef = useRef(focusedIndex);
   const queryClient = useQueryClient();
   const { mutate: updateTaskMutate, isPending: isReorderPending } = useUpdateTask();
   const { mutate: closeTaskMutate } = useCloseTask();
+  const { register: registerSearch, setQuery: setSearchContextQuery } = useSearch();
+
+  // Register with search context so the layout's top bar search works
+  const handleSearchChange = useCallback((search: string) => {
+    setSearchQuery(search);
+    setFilters((prev) => ({ ...prev, search }));
+  }, []);
+
+  useEffect(() => {
+    const unregister = registerSearch(handleSearchChange);
+    return unregister;
+  }, [registerSearch, handleSearchChange]);
+
+  // Sync search context query when clearing filters
+  const clearSearch = useCallback(() => {
+    setSearchContextQuery('');
+    handleSearchChange('');
+  }, [setSearchContextQuery, handleSearchChange]);
 
   function handleTaskCreated(taskId: string) {
     setNewTaskId(taskId);
     setTimeout(() => setNewTaskId(null), 1500);
   }
 
-  const { data: availableTags } = useTags();
+  // StatusTabs → filters sync: when a status tab is clicked, update filters.status
+  const handleStatusTabChange = useCallback((status: string | null) => {
+    setActiveStatusTab(status);
+    setFilters((prev) => ({
+      ...prev,
+      status: status ? [status] : [],
+    }));
+  }, []);
+
+  // When filter chips remove a status, sync back to status tabs
+  const handleFiltersChange = useCallback((newFilters: TaskFilters) => {
+    setFilters(newFilters);
+    // If status filter is empty or changed, update active tab
+    if (newFilters.status.length === 0) {
+      setActiveStatusTab(null);
+    } else if (newFilters.status.length === 1) {
+      const s = newFilters.status[0];
+      if (s === 'open' || s === 'in_progress' || s === 'closed') {
+        setActiveStatusTab(s);
+      } else {
+        setActiveStatusTab(null);
+      }
+    } else {
+      setActiveStatusTab(null);
+    }
+  }, []);
 
   const { data, isPending } = useTasks({
     priority: filters.priority,
@@ -240,23 +341,53 @@ export default function TasksPage() {
     dueBefore: filters.dueBefore || undefined,
   });
 
-  const tasks = React.useMemo(() => data?.data ?? [], [data?.data]);
+  const tasks = useMemo(() => data?.data ?? [], [data?.data]);
 
   // Keep local ordering in sync with server data (server is source of truth for new data)
-  React.useEffect(() => {
-    if (isReorderPending) return;
+  useEffect(() => {
+    if (isReorderPending) {
+      // During reorder, still merge in any new tasks so they aren't silently dropped
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: merges new server tasks into local drag-reorder state
+      setOrderedTaskIds((prev) => {
+        const existingSet = new Set(prev);
+        const newIds = tasks.map((t) => t.id).filter((id) => !existingSet.has(id));
+        return newIds.length > 0 ? [...prev, ...newIds] : prev;
+      });
+      return;
+    }
     setOrderedTaskIds(tasks.map((t) => t.id));
   }, [tasks, isReorderPending]);
 
   // Derive ordered task array from local order (for drag reorder)
-  const orderedTasks = React.useMemo(() => {
+  const orderedTasks = useMemo(() => {
     if (orderedTaskIds.length === 0) return tasks;
     const taskMap = new Map(tasks.map((t) => [t.id, t]));
     return orderedTaskIds.map((id) => taskMap.get(id)).filter(Boolean) as Task[];
   }, [tasks, orderedTaskIds]);
 
+  // Apply client-side search filter
+  const filteredTasks = useMemo(() => {
+    if (searchQuery.length < 2) return orderedTasks;
+    const q = searchQuery.toLowerCase();
+    return orderedTasks.filter((t) => t.title.toLowerCase().includes(q));
+  }, [orderedTasks, searchQuery]);
+
+  // Build virtual items with group-by
+  const virtualItemsList = useMemo(
+    () => buildVirtualItems(filteredTasks, groupBy),
+    [filteredTasks, groupBy],
+  );
+
+  // Task-only items for keyboard navigation
+  const taskOnlyItems = useMemo(
+    () => filteredTasks,
+    [filteredTasks],
+  );
+
+  // Disable DnD when search is active to prevent reorder index mismatch
+  const isDndEnabled = searchQuery.length < 2;
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: isDndEnabled ? 8 : Infinity } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -322,7 +453,7 @@ export default function TasksPage() {
   // Fetch full task detail (with tags) for the right panel
   const { data: selectedTask, isError: taskFetchError } = useTask(selectedTaskId);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (taskFetchError) {
       toast.error('Failed to load task details');
     }
@@ -367,24 +498,35 @@ export default function TasksPage() {
   }, []);
 
   // Derive a safe focused index that is always in bounds
-  const safeFocusedIndex = orderedTasks.length === 0
+  const safeFocusedIndex = taskOnlyItems.length === 0
     ? -1
-    : focusedIndex >= orderedTasks.length
-      ? orderedTasks.length - 1
+    : focusedIndex >= taskOnlyItems.length
+      ? taskOnlyItems.length - 1
       : focusedIndex;
+
+  // Keep ref in sync so keyboard handler always reads the latest value
+  useEffect(() => {
+    focusedIndexRef.current = safeFocusedIndex;
+  }, [safeFocusedIndex]);
 
   // Keyboard navigation: Arrow keys, Enter, Space, F2, Escape
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Don't fire when an input/textarea/select is focused
-      const tag = (e.target as HTMLElement)?.tagName;
+      // Don't fire when an interactive element is focused
+      const target = e.target as HTMLElement;
+      const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (orderedTasks.length === 0) return;
+      // For Space key, only intercept on body/task-list to avoid hijacking buttons/links
+      if (e.key === ' ' && tag !== 'BODY' && !target?.closest('[role="list"]')) return;
+      if (taskOnlyItems.length === 0) return;
+
+      // Read latest focused index from ref to avoid stale closure
+      const currentFocusedIndex = focusedIndexRef.current;
 
       switch (e.key) {
         case 'ArrowDown': {
           e.preventDefault();
-          setFocusedIndex((prev) => Math.min(prev + 1, orderedTasks.length - 1));
+          setFocusedIndex((prev) => Math.min(prev + 1, taskOnlyItems.length - 1));
           break;
         }
         case 'ArrowUp': {
@@ -393,23 +535,23 @@ export default function TasksPage() {
           break;
         }
         case 'Enter': {
-          if (safeFocusedIndex >= 0) {
+          if (currentFocusedIndex >= 0) {
             e.preventDefault();
-            handleSelectTask(orderedTasks[safeFocusedIndex].id);
+            handleSelectTask(taskOnlyItems[currentFocusedIndex].id);
           }
           break;
         }
         case ' ': {
-          if (safeFocusedIndex >= 0) {
+          if (currentFocusedIndex >= 0) {
             e.preventDefault();
-            handleCheckboxToggle(orderedTasks[safeFocusedIndex].id);
+            handleCheckboxToggle(taskOnlyItems[currentFocusedIndex].id);
           }
           break;
         }
         case 'F2': {
-          if (safeFocusedIndex >= 0) {
+          if (currentFocusedIndex >= 0) {
             e.preventDefault();
-            setEditingTaskId(orderedTasks[safeFocusedIndex].id);
+            setEditingTaskId(taskOnlyItems[currentFocusedIndex].id);
           }
           break;
         }
@@ -422,34 +564,68 @@ export default function TasksPage() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [orderedTasks, safeFocusedIndex, handleCheckboxToggle, handleSelectTask]);
+  }, [taskOnlyItems, handleCheckboxToggle, handleSelectTask]);
 
   const activeDragTask = orderedTasks.find((t) => t.id === activeDragId) ?? null;
 
   return (
     <>
       <div className="flex flex-col h-full">
-        {/* Quick add bar */}
-        <div className="sticky top-0 z-10 bg-background border-b border-border px-4 py-2">
+        {/* Mobile search row — hidden on desktop where layout top bar provides search */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-border md:hidden">
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <input
+            type="text"
+            placeholder="Search tasks\u2026"
+            aria-label="Search tasks"
+            value={searchQuery}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSearchQuery(value);
+              handleSearchChange(value);
+              setSearchContextQuery(value);
+            }}
+            className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => clearSearch()}
+              className="shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground"
+              aria-label="Clear search"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Status tabs + View settings row */}
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+          <StatusTabs activeStatus={activeStatusTab} onStatusChange={handleStatusTabChange} />
+          <ViewSettingsButton groupBy={groupBy} onGroupByChange={setGroupBy} />
+        </div>
+
+        {/* Filter chips (priority, tags) */}
+        <FilterBar filters={filters} onChange={handleFiltersChange} onClearAll={clearSearch} />
+
+        {/* Quick add bar — right above the task list */}
+        <div className="border-b border-border px-4 py-2">
           <QuickAddBar
             onOpenFullForm={() => setIsCreationDialogOpen(true)}
             onTaskCreated={handleTaskCreated}
           />
         </div>
 
-        {/* Filter chip bar */}
-        <FilterChipBar filters={filters} onChange={setFilters} availableTags={availableTags ?? []} />
-
         {/* Task list */}
         {isPending ? (
-          <div className="flex-1 overflow-y-auto space-y-2 p-2">
+          <div className="flex-1 overflow-y-auto space-y-2 px-2 pt-6 pb-2">
             <TaskCardSkeleton />
             <TaskCardSkeleton />
             <TaskCardSkeleton />
             <TaskCardSkeleton />
             <TaskCardSkeleton />
           </div>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           isNonDefault(filters) ? (
             <EmptyState
               icon={Search}
@@ -458,7 +634,11 @@ export default function TasksPage() {
             >
               <button
                 type="button"
-                onClick={() => setFilters({ ...DEFAULT_FILTERS })}
+                onClick={() => {
+                  setFilters({ ...DEFAULT_FILTERS });
+                  clearSearch();
+                  setActiveStatusTab(null);
+                }}
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
               >
                 Clear filters
@@ -486,12 +666,13 @@ export default function TasksPage() {
             onDragEnd={handleDragEnd}
           >
             <VirtualTaskList
-              tasks={orderedTasks}
+              virtualItems={virtualItemsList}
               selectedTaskId={selectedTaskId}
               highlightedTaskId={newTaskId}
               focusedIndex={safeFocusedIndex}
               editingTaskId={editingTaskId}
               selectedBulkIds={selectedBulkIds}
+              searchQuery={searchQuery}
               onSelect={handleSelectTask}
               onBulkSelect={handleBulkSelect}
               onTagClick={handleTagClick}

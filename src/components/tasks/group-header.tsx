@@ -10,7 +10,7 @@ interface GroupHeaderProps {
 
 export function GroupHeader({ label, colorClass }: GroupHeaderProps) {
   return (
-    <div className="flex items-center gap-2 px-2 py-1" role="separator" aria-label={`Group: ${label}`}>
+    <div className="flex items-center gap-2 px-2 py-1" role="presentation">
       <span
         className={cn(
           'text-[13px] font-semibold uppercase tracking-wide whitespace-nowrap shrink-0',

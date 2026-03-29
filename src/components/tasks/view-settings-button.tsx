@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { SlidersHorizontal, Check } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 
 export type GroupByOption = 'none' | 'tag' | 'date' | 'priority';
 
@@ -34,30 +36,16 @@ export function ViewSettingsButton({ groupBy, onGroupByChange }: ViewSettingsBut
         <span>View</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
           Group by
-        </div>
-        {GROUP_BY_OPTIONS.map((option) => {
-          const isActive = groupBy === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="menuitemradio"
-              aria-checked={isActive}
-              onClick={() => onGroupByChange(option.value)}
-              className={cn(
-                'w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer',
-                isActive && 'font-medium',
-              )}
-            >
-              <span className="w-4 h-4 flex items-center justify-center shrink-0">
-                {isActive && <Check className="h-4 w-4" />}
-              </span>
+        </DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={groupBy} onValueChange={(v) => onGroupByChange(v as GroupByOption)}>
+          {GROUP_BY_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
               {option.label}
-            </button>
-          );
-        })}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );

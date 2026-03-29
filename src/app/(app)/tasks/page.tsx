@@ -215,6 +215,7 @@ function VirtualTaskList({
                   key={item.id}
                   ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
+                  aria-label={`Group: ${item.label}`}
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -384,8 +385,8 @@ export default function TasksPage() {
     [filteredTasks],
   );
 
-  // Disable DnD when search is active to prevent reorder index mismatch
-  const isDndEnabled = searchQuery.length < 2;
+  // Disable DnD when search is active or group-by is active to prevent reorder index mismatch
+  const isDndEnabled = searchQuery.length < 2 && groupBy === 'none';
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: isDndEnabled ? 8 : Infinity } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -465,10 +466,19 @@ export default function TasksPage() {
   }, []);
 
   function handleTagClick(tagName: string) {
-    setFilters((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(tagName) ? prev.tags : [...prev.tags, tagName],
-    }));
+    setFilters((prev) => {
+      const newTags = prev.tags.includes(tagName) ? prev.tags : [...prev.tags, tagName];
+      // Sync tag filters to URL
+      const params = new URLSearchParams(window.location.search);
+      if (newTags.length > 0) {
+        params.set('tag', newTags.join(','));
+      } else {
+        params.delete('tag');
+      }
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+      return { ...prev, tags: newTags };
+    });
   }
 
   // Checkbox toggle: close task (no-op if already closed/archived)
@@ -582,7 +592,6 @@ export default function TasksPage() {
             onChange={(e) => {
               const value = e.target.value;
               setSearchQuery(value);
-              handleSearchChange(value);
               setSearchContextQuery(value);
             }}
             className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"

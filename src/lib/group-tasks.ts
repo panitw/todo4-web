@@ -25,32 +25,37 @@ const PRIORITY_GROUP_CONFIG: Record<string, { label: string; colorClass: string 
   p4: { label: 'Low', colorClass: 'text-gray-500' },
 };
 
+function parseDateLocal(dateStr: string): Date {
+  // Parse date-only strings as local time to avoid UTC off-by-one errors
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
 function getDateGroupLabel(dateStr: string | null): string {
   if (!dateStr) return 'No Due Date';
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const date = new Date(dateStr);
-  date.setHours(0, 0, 0, 0);
+  const date = parseDateLocal(dateStr);
 
   const diffMs = date.getTime() - today.getTime();
   const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return 'Today';
   if (diffDays === 1) return 'Tomorrow';
-  if (diffDays > 1 && diffDays <= 7) return 'Next Week';
+  if (diffDays > 1 && diffDays <= 7) return 'This Week';
   if (diffDays < 0) return 'Overdue';
 
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// Sort order for date groups
-function getDateGroupOrder(label: string): number {
-  if (label === 'Overdue') return 0;
-  if (label === 'Today') return 1;
-  if (label === 'Tomorrow') return 2;
-  if (label === 'Next Week') return 3;
-  if (label === 'No Due Date') return 999;
-  return 4; // Future dates
+// Sort key for date groups — future dates use their actual date string for chronological ordering
+function getDateGroupSortKey(label: string): string {
+  if (label === 'Overdue') return '0';
+  if (label === 'Today') return '1';
+  if (label === 'Tomorrow') return '2';
+  if (label === 'This Week') return '3';
+  if (label === 'No Due Date') return 'z';
+  return `4-${label}`; // Future dates sort lexicographically by formatted label
 }
 
 export function buildVirtualItems(tasks: Task[], groupBy: GroupByOption): VirtualItem[] {
@@ -116,7 +121,7 @@ export function buildVirtualItems(tasks: Task[], groupBy: GroupByOption): Virtua
 
     const items: VirtualItem[] = [];
     const sortedKeys = [...groups.keys()].sort(
-      (a, b) => getDateGroupOrder(a) - getDateGroupOrder(b),
+      (a, b) => getDateGroupSortKey(a).localeCompare(getDateGroupSortKey(b)),
     );
 
     for (const key of sortedKeys) {

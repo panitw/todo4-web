@@ -68,17 +68,25 @@ function formatDate(dateStr: string): string {
 
 function HighlightedText({ text, query }: { text: string; query?: string }) {
   if (!query || query.length < 2) return <>{text}</>;
-  const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
-  const idx = lowerText.indexOf(lowerQuery);
-  if (idx === -1) return <>{text}</>;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="bg-yellow-200 rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
-      {text.slice(idx + query.length)}
-    </>
-  );
+  const parts: React.ReactNode[] = [];
+  let remaining = text;
+  let keyIdx = 0;
+  while (remaining.length > 0) {
+    const idx = remaining.toLowerCase().indexOf(lowerQuery);
+    if (idx === -1) {
+      parts.push(remaining);
+      break;
+    }
+    if (idx > 0) parts.push(remaining.slice(0, idx));
+    parts.push(
+      <mark key={keyIdx++} className="bg-yellow-200 rounded-sm px-0.5">
+        {remaining.slice(idx, idx + query.length)}
+      </mark>,
+    );
+    remaining = remaining.slice(idx + query.length);
+  }
+  return <>{parts}</>;
 }
 
 // --- Sub-components ---

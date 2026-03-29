@@ -16,7 +16,7 @@ export interface TaskFilters {
 }
 
 export const DEFAULT_FILTERS: TaskFilters = {
-  priority: ['p1', 'p2'],
+  priority: [],
   status: [],
   tags: [],
   dueAfter: '',
@@ -42,12 +42,6 @@ const PRIORITY_CHIP_CONFIG: Record<string, { bg: string; border: string; text: s
   p2: { bg: 'bg-orange-50', border: 'border-orange-300', text: 'text-orange-700', label: 'High' },
   p3: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700', label: 'Medium' },
   p4: { bg: 'bg-gray-50', border: 'border-gray-300', text: 'text-gray-600', label: 'Low' },
-};
-
-const STATUS_CHIP_CONFIG: Record<string, { bg: string; border: string; text: string; label: string }> = {
-  open: { bg: 'bg-slate-50', border: 'border-slate-300', text: 'text-slate-700', label: 'To Do' },
-  in_progress: { bg: 'bg-blue-50', border: 'border-blue-300', text: 'text-blue-700', label: 'In Progress' },
-  closed: { bg: 'bg-green-50', border: 'border-green-300', text: 'text-green-700', label: 'Done' },
 };
 
 // --- RemovableChip ---
@@ -105,15 +99,11 @@ export function FilterBar({ filters, onChange, onClearAll }: FilterBarProps) {
     onChange({ ...filters, priority: filters.priority.filter((x) => x !== p) as TaskFilters['priority'] });
   }
 
-  function removeStatus(s: string) {
-    onChange({ ...filters, status: filters.status.filter((x) => x !== s) });
-  }
-
   function removeTag(t: string) {
     onChange({ ...filters, tags: filters.tags.filter((x) => x !== t) });
   }
 
-  const hasChips = filters.priority.length > 0 || filters.status.length > 0 || filters.tags.length > 0;
+  const hasChips = filters.priority.length > 0 || filters.tags.length > 0;
 
   if (!hasChips) return null;
 
@@ -132,23 +122,6 @@ export function FilterBar({ filters, onChange, onClearAll }: FilterBarProps) {
             text={config.text}
             onRemove={() => removePriority(p)}
             ariaLabel={`Remove ${config.label} priority filter`}
-          />
-        );
-      })}
-
-      {/* Status chips */}
-      {filters.status.map((s) => {
-        const config = STATUS_CHIP_CONFIG[s];
-        if (!config) return null;
-        return (
-          <RemovableChip
-            key={`status-${s}`}
-            label={config.label}
-            bg={config.bg}
-            border={config.border}
-            text={config.text}
-            onRemove={() => removeStatus(s)}
-            ariaLabel={`Remove ${config.label} status filter`}
           />
         );
       })}

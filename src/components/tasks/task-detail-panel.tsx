@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Bot, X } from 'lucide-react';
 import { type Task, type TaskHistory, type TaskComment } from '@/lib/api/tasks';
@@ -35,16 +35,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { SectionHeader, PRIORITY_LABELS, PRIORITY_COLORS } from './task-shared';
 
 // ─── Constants ──────────────────────────────────────────────────────────────
-
-const PRIORITY_LABELS: Record<string, string> = {
-  p1: 'Critical', p2: 'High', p3: 'Medium', p4: 'Low',
-};
-
-const PRIORITY_COLORS: Record<string, string> = {
-  p1: 'text-red-600', p2: 'text-orange-500', p3: 'text-blue-500', p4: 'text-gray-400',
-};
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
   open: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'To Do' },
@@ -55,15 +48,6 @@ const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }>
   blocked: { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
   archived: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Archived' },
 };
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 mb-2">
-      <h3 className="text-[13px] font-semibold text-indigo-400 uppercase tracking-wide whitespace-nowrap shrink-0">{children}</h3>
-      <span className="flex-1 h-px bg-indigo-200" aria-hidden="true" />
-    </div>
-  );
-}
 
 // ─── Status Badge (read-only, for non-editable states) ──────────────────────
 
@@ -168,13 +152,38 @@ function ConfirmationActionBar({ task, onClose }: { task: Task; onClose: () => v
         })}
         className="border-red-300 text-red-700 hover:bg-red-50"
       >Reject</Button>
-      <Button size="sm" disabled={isDeleting || isRestoring}
+      <Button size="sm" variant="gradient" disabled={isDeleting || isRestoring}
         onClick={() => deleteMutate(task.id, {
           onSuccess: () => { onClose(); toast.success('Task deleted'); },
           onError: () => toast.error('Failed to delete task'),
         })}
       >Approve</Button>
     </div>
+  );
+}
+
+// ─── Due Date Input (controlled) ────────────────────────────────────────────
+
+function DueDateInput({ task }: { task: Task }) {
+  const [localDate, setLocalDate] = useState(task.dueDate ? task.dueDate.substring(0, 10) : '');
+  const { mutate } = useUpdateTask();
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncs controlled input with server state on prop change
+    setLocalDate(task.dueDate ? task.dueDate.substring(0, 10) : '');
+  }, [task.dueDate]);
+
+  const handleBlur = useCallback(() => {
+    const serverDate = task.dueDate ? task.dueDate.substring(0, 10) : '';
+    if (localDate === serverDate) return;
+    mutate({ id: task.id, data: { dueDate: localDate || null } }, {
+      onError: () => { setLocalDate(serverDate); toast.error('Failed to update due date'); },
+    });
+  }, [localDate, task.dueDate, task.id, mutate]);
+
+  return (
+    <Input type="date" value={localDate} onChange={(e) => setLocalDate(e.target.value)}
+      className="w-36 h-7 text-xs" onBlur={handleBlur} />
   );
 }
 
@@ -342,7 +351,7 @@ function CommentsSection({ taskId }: { taskId: string }) {
           onChange={(e) => setBody(e.target.value)} className="text-sm min-h-[48px] flex-1"
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
         />
-        <Button size="sm" disabled={isSubmitting || !body.trim()} onClick={handleSubmit}>
+        <Button size="sm" variant="gradient" disabled={isSubmitting || !body.trim()} onClick={handleSubmit}>
           {isSubmitting ? 'Posting...' : 'Post'}
         </Button>
       </div>
@@ -353,37 +362,44 @@ function CommentsSection({ taskId }: { taskId: string }) {
 // ─── Tags Editor ─────────────────────────────────────────────────────────────
 
 function TagsEditor({ task }: { task: Task }) {
+  const [localTags, setLocalTags] = useState(task.tags ?? []);
   const [tagInput, setTagInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { mutate } = useUpdateTask();
   const { data: existingTags } = useTags();
 
-  const tags = task.tags ?? [];
+  // Sync local tags with server when task prop updates
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncs optimistic local state with server on prop change
+  useEffect(() => { setLocalTags(task.tags ?? []); }, [task.tags]);
 
   function addTag(tagName: string) {
-    const trimmed = tagName.trim();
-    if (!trimmed || trimmed.length > 100 || tags.includes(trimmed)) return;
-    mutate({ id: task.id, data: { tags: [...tags, trimmed] } }, {
-      onError: () => toast.error('Failed to update tags'),
+    const trimmed = tagName.trim().toLowerCase();
+    if (!trimmed || trimmed.length > 100 || localTags.includes(trimmed)) return;
+    const newTags = [...localTags, trimmed];
+    setLocalTags(newTags);
+    mutate({ id: task.id, data: { tags: newTags } }, {
+      onError: () => { setLocalTags(task.tags ?? []); toast.error('Failed to update tags'); },
     });
     setTagInput('');
     setShowSuggestions(false);
   }
 
   function removeTag(tagName: string) {
-    mutate({ id: task.id, data: { tags: tags.filter((t) => t !== tagName) } }, {
-      onError: () => toast.error('Failed to update tags'),
+    const newTags = localTags.filter((t) => t !== tagName);
+    setLocalTags(newTags);
+    mutate({ id: task.id, data: { tags: newTags } }, {
+      onError: () => { setLocalTags(task.tags ?? []); toast.error('Failed to update tags'); },
     });
   }
 
   const suggestions = existingTags?.filter(
-    (t) => t.name.toLowerCase().includes(tagInput.toLowerCase()) && !tags.includes(t.name),
+    (t) => t.name.toLowerCase().includes(tagInput.toLowerCase()) && !localTags.includes(t.name),
   ) ?? [];
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-input bg-background px-3 py-2 min-h-[36px] focus-within:border-ring">
-        {tags.map((tag) => (
+      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-input bg-background px-3 py-2 min-h-[36px]">
+        {localTags.map((tag) => (
           <Badge key={tag} variant="secondary" className="text-xs gap-1">
             {tag}
             <button type="button" onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive" aria-label={`Remove tag ${tag}`}>
@@ -399,10 +415,9 @@ function TagsEditor({ task }: { task: Task }) {
           onFocus={() => { if (tagInput.length > 0) setShowSuggestions(true); }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput); }
-            if (e.key === 'Backspace' && !tagInput && tags.length > 0) removeTag(tags[tags.length - 1]);
             if (e.key === 'Escape') setShowSuggestions(false);
           }}
-          placeholder={tags.length === 0 ? 'Type to add tags...' : ''}
+          placeholder={localTags.length === 0 ? 'Type to add tags...' : ''}
           className="flex-1 min-w-[100px] bg-transparent text-sm outline-none border-none shadow-none focus:ring-0 focus:outline-none placeholder:text-muted-foreground"
           style={{ outline: 'none', boxShadow: 'none' }}
         />
@@ -503,12 +518,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
                 <SelectItem value="p4"><span className="text-gray-400">&#9679;</span> Low</SelectItem>
               </SelectContent>
             </Select>
-            <Input type="date"
-              defaultValue={task.dueDate ? task.dueDate.substring(0, 10) : ''}
-              className="w-36 h-7 text-xs"
-              onBlur={(e) => updateMutate({ id: task.id, data: { dueDate: e.target.value || null } },
-                { onError: () => toast.error('Failed to update due date') })}
-            />
+            <DueDateInput task={task} />
           </div>
 
           {/* Description */}

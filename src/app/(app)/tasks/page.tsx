@@ -473,28 +473,27 @@ export default function TasksPage() {
   }, []);
 
   function handleTagClick(tagName: string) {
-    setFilters((prev) => {
-      const newTags = prev.tags.includes(tagName) ? prev.tags : [...prev.tags, tagName];
-      return { ...prev, tags: newTags };
-    });
-    // Sync tag filters to URL outside of setState
-    setTimeout(() => {
-      const params = new URLSearchParams(window.location.search);
-      const currentTags = filters.tags.includes(tagName) ? filters.tags : [...filters.tags, tagName];
-      if (currentTags.length > 0) {
-        params.set('tag', currentTags.join(','));
-      } else {
-        params.delete('tag');
-      }
-      const qs = params.toString();
-      window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
-    }, 0);
+    // Compute new tags from current state (consistent for both setState and URL sync)
+    const newTags = filters.tags.includes(tagName) ? filters.tags : [...filters.tags, tagName];
+    setFilters((prev) => ({ ...prev, tags: prev.tags.includes(tagName) ? prev.tags : [...prev.tags, tagName] }));
+    // Sync tag filters to URL synchronously
+    const params = new URLSearchParams(window.location.search);
+    if (newTags.length > 0) {
+      params.set('tag', newTags.join(','));
+    } else {
+      params.delete('tag');
+    }
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
   }
 
   // Checkbox toggle: close task, or reopen if already closed
+  // Only toggle between open/in_progress ↔ closed. Skip non-standard statuses.
   const handleCheckboxToggle = useCallback((id: string) => {
     const task = orderedTasks.find((t) => t.id === id);
-    if (!task || task.status === 'archived') return;
+    if (!task) return;
+    const toggleable = new Set(['open', 'in_progress', 'closed']);
+    if (!toggleable.has(task.status)) return;
     if (task.status === 'closed') {
       updateTaskMutate({ id, data: { status: 'open' } }, {
         onSuccess: () => toast.success('Task reopened'),
@@ -542,6 +541,7 @@ export default function TasksPage() {
       const target = e.target as HTMLElement;
       const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (target?.isContentEditable) return;
       // Also skip if inside a dialog/sheet overlay
       if (target?.closest('[data-slot="sheet-content"]')) return;
 
@@ -549,6 +549,9 @@ export default function TasksPage() {
       if (e.key === 'c' || e.key === 'C') {
         if (!e.metaKey && !e.ctrlKey && !e.altKey) {
           e.preventDefault();
+          // Close detail panel if open before opening creation
+          setSelectedTaskId(null);
+          setIsRightPanelOpen(false);
           setIsCreationDialogOpen(true);
           return;
         }

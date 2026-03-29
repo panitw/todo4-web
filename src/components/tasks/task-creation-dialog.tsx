@@ -18,6 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useCreateTask } from '@/hooks/use-create-task';
 import { useTags } from '@/hooks/use-tags';
+import { SectionHeader, PRIORITY_LABELS, PRIORITY_COLORS } from './task-shared';
 import type { CreateTaskInput } from '@/lib/api/tasks';
 
 interface TaskCreationDialogProps {
@@ -42,8 +43,6 @@ interface FormErrors {
   tagInput?: string;
 }
 
-const PRIORITY_LABELS: Record<string, string> = { p1: 'Critical', p2: 'High', p3: 'Medium', p4: 'Low' };
-const PRIORITY_COLORS: Record<string, string> = { p1: 'text-red-600', p2: 'text-orange-500', p3: 'text-blue-500', p4: 'text-gray-400' };
 const STATUS_CONFIG: Record<string, { dot: string; border: string; label: string }> = {
   open: { dot: 'bg-slate-300 border-slate-400', border: 'border-slate-400', label: 'To Do' },
   in_progress: { dot: 'bg-blue-500', border: 'border-transparent', label: 'In Progress' },
@@ -58,15 +57,6 @@ const defaultForm: FormState = {
   tagInput: '',
   tags: [],
 };
-
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 mb-2">
-      <h3 className="text-[13px] font-semibold text-indigo-400 uppercase tracking-wide whitespace-nowrap shrink-0">{children}</h3>
-      <span className="flex-1 h-px bg-indigo-200" aria-hidden="true" />
-    </div>
-  );
-}
 
 export function TaskCreationDialog({
   open,
@@ -92,10 +82,9 @@ export function TaskCreationDialog({
     }
   }, [open]);
 
-  function handleChange(field: keyof FormState, value: string | null) {
-    if (value === null) return;
+  function handleChange(field: 'title' | 'description' | 'priority' | 'status' | 'dueDate' | 'tagInput', value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
-    if (field in errors) setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (Object.prototype.hasOwnProperty.call(errors, field)) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
 
   function validateField(field: string, value: string): string | undefined {
@@ -121,7 +110,7 @@ export function TaskCreationDialog({
   }
 
   function addTag(tagName: string) {
-    const trimmed = tagName.trim();
+    const trimmed = tagName.trim().toLowerCase();
     if (!trimmed || trimmed.length > 100 || form.tags.includes(trimmed)) return;
     setForm((prev) => ({ ...prev, tags: [...prev.tags, trimmed], tagInput: '' }));
     setShowTagSuggestions(false);
@@ -184,7 +173,7 @@ export function TaskCreationDialog({
           <span className="text-sm font-medium text-foreground">New Task</span>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="outline" onClick={handleClose} disabled={isPending}>Cancel</Button>
-            <Button size="sm" onClick={() => handleSubmit()} disabled={isPending || !isValid}>
+            <Button size="sm" variant="gradient" onClick={() => handleSubmit()} disabled={isPending || !isValid}>
               {isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
               Create
             </Button>
@@ -196,7 +185,7 @@ export function TaskCreationDialog({
         </div>
 
         {/* Scrollable content — same structure as detail panel */}
-        <div className="flex-1 overflow-y-auto">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
           <div className="flex flex-col gap-5 p-4">
 
             {/* Title */}
@@ -219,7 +208,7 @@ export function TaskCreationDialog({
 
             {/* Metadata row — matches detail panel */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Select value={form.status} onValueChange={(v) => handleChange('status', v)}>
+              <Select value={form.status} onValueChange={(v) => { if (v) handleChange('status', v); }}>
                 <SelectTrigger className="w-auto h-7 text-xs">
                   <span className={`inline-block w-2 h-2 rounded-full ${statusConfig.dot} border ${statusConfig.border}`} />
                   <span>{statusConfig.label}</span>
@@ -230,7 +219,7 @@ export function TaskCreationDialog({
                 </SelectContent>
               </Select>
 
-              <Select value={form.priority} onValueChange={(v) => handleChange('priority', v)}>
+              <Select value={form.priority} onValueChange={(v) => { if (v) handleChange('priority', v); }}>
                 <SelectTrigger className="w-auto h-7 text-xs">
                   <span className={PRIORITY_COLORS[form.priority]}>&#9679;</span>
                   <span>{PRIORITY_LABELS[form.priority]}</span>
@@ -309,7 +298,7 @@ export function TaskCreationDialog({
             {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
 
           </div>
-        </div>
+        </form>
       </SheetContent>
     </Sheet>
   );

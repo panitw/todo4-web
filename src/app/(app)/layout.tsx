@@ -24,6 +24,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { query, setQuery, active: searchActive } = useSearch();
   const { active: createTaskActive, trigger: triggerCreateTask } = useCreateTaskAction();
 
+  // Show search bar and create task button only on task-related pages
+  const showTaskBar = pathname === '/tasks' || pathname.startsWith('/tasks/') || pathname === '/calendar';
+
+  // Page title for non-task pages
+  const pageTitle = pathname.startsWith('/connections') ? 'Connections'
+    : pathname.startsWith('/settings') ? 'Settings'
+    : '';
+
   // P-2: Reset scroll position on view switch (AC6)
   useEffect(() => {
     mainRef.current?.scrollTo(0, 0);
@@ -49,18 +57,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {/* Desktop top bar — inside 960px content area (IG-2) */}
             <header className="hidden md:flex items-center gap-4 py-3 border-b border-border">
               <div className="flex-1 relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Search tasks..."
-                  aria-label="Search tasks"
-                  className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring"
-                  value={searchActive ? query : ''}
-                  onChange={(e) => setQuery(e.target.value)}
-                  readOnly={!searchActive}
-                />
+                {showTaskBar ? (
+                  <>
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Search tasks..."
+                      aria-label="Search tasks"
+                      className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring"
+                      value={searchActive ? query : ''}
+                      onChange={(e) => setQuery(e.target.value)}
+                      readOnly={!searchActive}
+                    />
+                  </>
+                ) : (
+                  <span className="text-page-title font-semibold">{pageTitle}</span>
+                )}
               </div>
-              {createTaskActive && (
+              {showTaskBar && createTaskActive && (
                 <button
                   type="button"
                   onClick={triggerCreateTask}

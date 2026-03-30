@@ -176,6 +176,12 @@ function DueDateInput({ task }: { task: Task }) {
   const handleBlur = useCallback(() => {
     const serverDate = task.dueDate ? task.dueDate.substring(0, 10) : '';
     if (localDate === serverDate) return;
+    // Validate date format before sending to server
+    if (localDate && !/^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
+      setLocalDate(serverDate);
+      toast.error('Invalid date format');
+      return;
+    }
     mutate({ id: task.id, data: { dueDate: localDate || null } }, {
       onError: () => { setLocalDate(serverDate); toast.error('Failed to update due date'); },
     });
@@ -202,7 +208,7 @@ function InlineEditableTitle({ task }: { task: Task }) {
     if (saveTriggeredRef.current) return;
     saveTriggeredRef.current = true;
     const trimmed = localTitle.trim();
-    if (!trimmed) { setError('Title is required'); setLocalTitle(task.title); setIsEditing(false); saveTriggeredRef.current = false; return; }
+    if (!trimmed) { toast.error('Title is required'); setLocalTitle(task.title); setIsEditing(false); saveTriggeredRef.current = false; return; }
     if (trimmed.length > 500) { setError('Max 500 characters'); saveTriggeredRef.current = false; return; }
     setError(null);
     if (trimmed === task.title) { setIsEditing(false); saveTriggeredRef.current = false; return; }
@@ -242,16 +248,19 @@ function DescriptionEditor({ task }: { task: Task }) {
   const [localDesc, setLocalDesc] = useState(task.description ?? '');
   const [error, setError] = useState<string | null>(null);
   const { mutate } = useUpdateTask();
+  const saveTriggeredRef = useRef(false);
 
   React.useEffect(() => { if (!isEditing) setLocalDesc(task.description ?? ''); }, [task.description, isEditing]);
 
   function handleSave() {
-    if (localDesc.length > 10000) { setError('Max 10,000 characters'); return; }
+    if (saveTriggeredRef.current) return;
+    saveTriggeredRef.current = true;
+    if (localDesc.length > 10000) { setError('Max 10,000 characters'); saveTriggeredRef.current = false; return; }
     setError(null);
-    if (localDesc === (task.description ?? '')) { setIsEditing(false); return; }
+    if (localDesc === (task.description ?? '')) { setIsEditing(false); saveTriggeredRef.current = false; return; }
     mutate({ id: task.id, data: { description: localDesc } }, {
       onError: () => { setLocalDesc(task.description ?? ''); toast.error('Failed to update description'); },
-      onSettled: () => setIsEditing(false),
+      onSettled: () => { setIsEditing(false); saveTriggeredRef.current = false; },
     });
   }
 
@@ -367,19 +376,32 @@ function TagsEditor({ task }: { task: Task }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { mutate } = useUpdateTask();
   const { data: existingTags } = useTags();
+  const pendingTagsRef = useRef<string[] | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Sync local tags with server when task prop updates
+  // Sync local tags with server when task prop updates (only if no pending mutation)
   // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: syncs optimistic local state with server on prop change
-  useEffect(() => { setLocalTags(task.tags ?? []); }, [task.tags]);
+  useEffect(() => { if (!pendingTagsRef.current) setLocalTags(task.tags ?? []); }, [task.tags]);
+
+  function flushTags(newTags: string[]) {
+    clearTimeout(debounceRef.current);
+    pendingTagsRef.current = newTags;
+    debounceRef.current = setTimeout(() => {
+      const tagsToSave = pendingTagsRef.current;
+      if (!tagsToSave) return;
+      mutate({ id: task.id, data: { tags: tagsToSave } }, {
+        onError: () => { setLocalTags(task.tags ?? []); toast.error('Failed to update tags'); },
+        onSettled: () => { pendingTagsRef.current = null; },
+      });
+    }, 300);
+  }
 
   function addTag(tagName: string) {
     const trimmed = tagName.trim().toLowerCase();
     if (!trimmed || trimmed.length > 100 || localTags.includes(trimmed)) return;
     const newTags = [...localTags, trimmed];
     setLocalTags(newTags);
-    mutate({ id: task.id, data: { tags: newTags } }, {
-      onError: () => { setLocalTags(task.tags ?? []); toast.error('Failed to update tags'); },
-    });
+    flushTags(newTags);
     setTagInput('');
     setShowSuggestions(false);
   }
@@ -387,9 +409,7 @@ function TagsEditor({ task }: { task: Task }) {
   function removeTag(tagName: string) {
     const newTags = localTags.filter((t) => t !== tagName);
     setLocalTags(newTags);
-    mutate({ id: task.id, data: { tags: newTags } }, {
-      onError: () => { setLocalTags(task.tags ?? []); toast.error('Failed to update tags'); },
-    });
+    flushTags(newTags);
   }
 
   const suggestions = existingTags?.filter(
@@ -545,9 +565,13 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
               <button
                 onClick={() => setShowAgentNotes((v) => !v)}
                 aria-expanded={showAgentNotes}
-                className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 hover:text-foreground transition-colors"
+                className="flex items-center gap-2 mb-2 group"
               >
-                Agent Notes {showAgentNotes ? '▾' : '▸'}
+                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Agent Notes</span>
+                <span className="flex-1 h-px bg-indigo-100" />
+                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                  {showAgentNotes ? '▾' : '▸'}
+                </span>
               </button>
               {showAgentNotes && (
                 <div className="opacity-60 bg-muted/30 p-3 rounded text-sm font-mono whitespace-pre-wrap text-muted-foreground">

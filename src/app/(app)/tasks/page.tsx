@@ -36,9 +36,11 @@ import { TaskCreationDialog } from '@/components/tasks/task-creation-dialog';
 // QuickAddBar removed — replaced by FAB (mobile) + "New Task" button (desktop) + C shortcut
 import { TaskDetailPanel } from '@/components/tasks/task-detail-panel';
 import { BulkActionBar } from '@/components/tasks/bulk-action-bar';
+import { AttentionBlock } from '@/components/attention/attention-block';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useTasks } from '@/hooks/use-tasks';
 import { useTask } from '@/hooks/use-task';
+import { useAttentionItems } from '@/hooks/use-attention-items';
 import { useUpdateTask } from '@/hooks/use-update-task';
 import { useCloseTask } from '@/hooks/use-close-task';
 import { useSearch } from '@/providers/search-provider';
@@ -351,6 +353,10 @@ export default function TasksPage() {
 
   const tasks = useMemo(() => data?.data ?? [], [data?.data]);
 
+  // Attention items (pending_deletion + waiting_for_human) — polled every 30s
+  const { data: attentionData } = useAttentionItems();
+  const attentionTasks = useMemo(() => attentionData?.data ?? [], [attentionData?.data]);
+
   // Keep local ordering in sync with server data (server is source of truth for new data)
   useEffect(() => {
     if (isReorderPending) {
@@ -467,7 +473,11 @@ export default function TasksPage() {
     }
   }, [taskFetchError]);
 
+  const detailTriggerRef = useRef<HTMLElement | null>(null);
+
   const handleSelectTask = useCallback((id: string) => {
+    // Track the element that triggered the detail panel for focus return
+    detailTriggerRef.current = document.activeElement as HTMLElement | null;
     setSelectedTaskId(id);
     setIsRightPanelOpen(true);
   }, []);
@@ -648,6 +658,13 @@ export default function TasksPage() {
         {/* Filter chips (priority, tags) */}
         <FilterBar filters={filters} onChange={handleFiltersChange} onClearAll={clearSearch} />
 
+        {/* Needs Attention section */}
+        {attentionTasks.length > 0 && (
+          <div className="px-2 pt-2">
+            <AttentionBlock tasks={attentionTasks} onSelectTask={handleSelectTask} />
+          </div>
+        )}
+
         {/* Task list */}
         {isPending ? (
           <div className="flex-1 overflow-y-auto space-y-2 px-2 pt-6 pb-2">
@@ -747,24 +764,42 @@ export default function TasksPage() {
 
       {/* Task detail panel in Sheet */}
       <Sheet
-        open={isRightPanelOpen && !!selectedTask}
+        open={isRightPanelOpen}
         onOpenChange={(open) => {
           if (!open) {
             setSelectedTaskId(null);
             setIsRightPanelOpen(false);
+            // Return focus to the element that triggered the detail panel
+            setTimeout(() => detailTriggerRef.current?.focus(), 0);
           }
         }}
       >
         <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md lg:max-w-lg p-0">
-          {selectedTask && (
+          {selectedTask ? (
             <TaskDetailPanel
               task={selectedTask}
               onClose={() => {
                 setSelectedTaskId(null);
                 setIsRightPanelOpen(false);
+                setTimeout(() => detailTriggerRef.current?.focus(), 0);
               }}
               onTagClick={handleTagClick}
             />
+          ) : (
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+                <button onClick={() => { setSelectedTaskId(null); setIsRightPanelOpen(false); setTimeout(() => detailTriggerRef.current?.focus(), 0); }}
+                  aria-label="Close task detail" className="rounded-full p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-4 p-4 animate-pulse">
+                <div className="h-6 w-3/4 bg-muted rounded" />
+                <div className="h-4 w-1/2 bg-muted rounded" />
+                <div className="h-20 w-full bg-muted rounded" />
+              </div>
+            </div>
           )}
         </SheetContent>
       </Sheet>

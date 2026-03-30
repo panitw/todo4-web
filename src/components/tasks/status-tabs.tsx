@@ -4,8 +4,8 @@ import React, { useRef, useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
 
 const STATUS_TABS = [
-  { value: 'active', label: 'Active', statuses: ['open', 'in_progress'] },
-  { value: 'done', label: 'Done', statuses: ['closed'] },
+  { value: 'active', label: 'Active', statuses: ['open', 'in_progress', 'waiting_for_human', 'pending_deletion', 'blocked'] },
+  { value: 'done', label: 'Done', statuses: ['closed', 'archived'] },
 ] as const;
 
 type StatusTabValue = (typeof STATUS_TABS)[number]['value'];

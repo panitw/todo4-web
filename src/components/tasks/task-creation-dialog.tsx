@@ -25,6 +25,8 @@ interface TaskCreationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTaskCreated?: (taskId: string) => void;
+  /** Pre-fill the due date field (ISO date string like "2026-03-15") */
+  defaultDueDate?: string;
 }
 
 interface FormState {
@@ -62,8 +64,12 @@ export function TaskCreationDialog({
   open,
   onOpenChange,
   onTaskCreated,
+  defaultDueDate,
 }: TaskCreationDialogProps) {
-  const [form, setForm] = useState<FormState>(defaultForm);
+  const [form, setForm] = useState<FormState>(() => ({
+    ...defaultForm,
+    dueDate: defaultDueDate ?? '',
+  }));
   const [errors, setErrors] = useState<FormErrors>({});
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
   const { mutate, isPending, error } = useCreateTask();
@@ -71,12 +77,18 @@ export function TaskCreationDialog({
   const titleRef = useRef<HTMLInputElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (open) triggerRef.current = document.activeElement as HTMLElement;
-  }, [open]);
+  // Adjust form state when dialog opens (React "adjust state during render" pattern)
+  const [prevOpen, setPrevOpen] = useState(false);
+  if (open && !prevOpen) {
+    setForm({ ...defaultForm, dueDate: defaultDueDate ?? '' });
+  }
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+  }
 
   useEffect(() => {
     if (open) {
+      triggerRef.current = document.activeElement as HTMLElement;
       const timer = setTimeout(() => titleRef.current?.focus(), 100);
       return () => clearTimeout(timer);
     }
@@ -131,7 +143,7 @@ export function TaskCreationDialog({
   ) ?? [];
 
   function resetForm() {
-    setForm(defaultForm);
+    setForm({ ...defaultForm, dueDate: defaultDueDate ?? '' });
     setErrors({});
     setShowTagSuggestions(false);
   }

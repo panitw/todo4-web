@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronLeft, Copy, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { type Platform, PLATFORMS } from './platform-card'
 
-const MCP_URL = 'https://todo4.io/mcp'
+const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL || 'https://todo4.io/mcp'
 
 interface Step {
   text: string
@@ -30,7 +30,7 @@ const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
     copyValue: MCP_URL,
     copyLabel: 'MCP Server URL',
     steps: [
-      { text: 'Open Claude Desktop → Settings → Connectors' },
+      { text: 'Open Claude Desktop \u2192 Settings \u2192 Connectors' },
       { text: 'Click "Add Connector"' },
       { text: 'Paste the URL above and click "Add"' },
       { text: 'Authorize todo4 when your browser opens' },
@@ -41,7 +41,7 @@ const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
     copyValue: MCP_URL,
     copyLabel: 'MCP Server URL',
     steps: [
-      { text: 'Open ChatGPT → Settings → Apps & Connectors' },
+      { text: 'Open ChatGPT \u2192 Settings \u2192 Apps & Connectors' },
       { text: 'Under Advanced settings, enable Developer Mode' },
       { text: 'Click "Add new connector"' },
       { text: 'Set name to "todo4", paste the URL above, and set auth to OAuth' },
@@ -76,18 +76,36 @@ const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
   },
 }
 
-function CodeSnippet({ code }: { code: string }) {
+function useCopyToClipboard(liveRef?: React.RefObject<HTMLDivElement | null>) {
   const [copied, setCopied] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null)
 
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Fallback: ignore if clipboard unavailable
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }
+  }, [])
+
+  const copy = useCallback(async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      if (liveRef?.current) liveRef.current.textContent = 'Copied to clipboard'
+      if (timerRef.current) clearTimeout(timerRef.current)
+      timerRef.current = setTimeout(() => {
+        setCopied(false)
+        if (liveRef?.current) liveRef.current.textContent = ''
+      }, 2000)
+    } catch {
+      if (liveRef?.current) liveRef.current.textContent = 'Failed to copy — please select and copy manually'
+    }
+  }, [liveRef])
+
+  return { copied, copy }
+}
+
+function CodeSnippet({ code, liveRef }: { code: string; liveRef: React.RefObject<HTMLDivElement | null> }) {
+  const { copied, copy } = useCopyToClipboard(liveRef)
 
   return (
     <div className="group/code relative mt-1 ml-5">
@@ -96,8 +114,8 @@ function CodeSnippet({ code }: { code: string }) {
       </code>
       <button
         type="button"
-        onClick={handleCopy}
-        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/code:opacity-100"
+        onClick={() => copy(code)}
+        className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground transition-opacity hover:text-foreground md:opacity-0 md:group-hover/code:opacity-100"
         aria-label="Copy command"
       >
         {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
@@ -113,28 +131,10 @@ interface ConfigStepProps {
 }
 
 export function ConfigStep({ platform, onBack, onNext }: ConfigStepProps) {
-  const [copied, setCopied] = useState(false)
   const liveRef = useRef<HTMLDivElement>(null)
+  const { copied, copy } = useCopyToClipboard(liveRef)
   const config = PLATFORM_CONFIGS[platform]
   const info = PLATFORMS[platform]
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(config.copyValue)
-      setCopied(true)
-      if (liveRef.current) {
-        liveRef.current.textContent = 'Copied to clipboard'
-      }
-      setTimeout(() => {
-        setCopied(false)
-        if (liveRef.current) {
-          liveRef.current.textContent = ''
-        }
-      }, 2000)
-    } catch {
-      // Fallback: select text if clipboard API unavailable
-    }
-  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -150,7 +150,7 @@ export function ConfigStep({ platform, onBack, onNext }: ConfigStepProps) {
         <h2 className="text-lg font-semibold">Configure {info.name}</h2>
       </div>
 
-      {/* Live region for copy announcement */}
+      {/* Live region for copy announcements (shared with CodeSnippets) */}
       <div ref={liveRef} aria-live="polite" className="sr-only" />
 
       {/* Copy box — GUI platforms only */}
@@ -167,7 +167,7 @@ export function ConfigStep({ platform, onBack, onNext }: ConfigStepProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={handleCopy}
+            onClick={() => copy(config.copyValue)}
             className="absolute right-3 top-3"
             aria-label={`Copy ${config.copyLabel.toLowerCase()} to clipboard`}
           >
@@ -182,7 +182,7 @@ export function ConfigStep({ platform, onBack, onNext }: ConfigStepProps) {
           <li key={i}>
             {step.text}
             {step.code && (
-              <CodeSnippet code={step.code} />
+              <CodeSnippet code={step.code} liveRef={liveRef} />
             )}
           </li>
         ))}

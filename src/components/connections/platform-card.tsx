@@ -85,8 +85,10 @@ export function PlatformCard({ platform, selected, disabled, onSelect }: Platfor
   if (disabled) {
     return (
       <div
+        role="button"
+        aria-disabled="true"
         className={cn(
-          'flex w-full items-center gap-4 rounded-lg border border-border bg-muted/50 p-4 opacity-60',
+          'flex w-full items-center gap-4 rounded-lg border border-border bg-muted/50 p-4 opacity-60 cursor-not-allowed',
           'md:flex-col md:items-center md:justify-center md:gap-2 md:p-6 md:text-center',
         )}
         aria-label={`${info.name} — coming soon`}

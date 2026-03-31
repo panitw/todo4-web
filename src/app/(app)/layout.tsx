@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Plus, Search } from 'lucide-react';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
+import { CommandPalette } from '@/components/command-palette';
 import { useSearch } from '@/providers/search-provider';
 import { useCreateTaskAction } from '@/providers/create-task-provider';
 
@@ -20,9 +21,40 @@ const BottomTabBar = dynamic(
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
+  const router = useRouter();
   const pathname = usePathname();
   const { query, setQuery, active: searchActive } = useSearch();
   const { active: createTaskActive, trigger: triggerCreateTask } = useCreateTaskAction();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Cmd+K / Ctrl+K to open command palette (desktop only)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!mq.matches) return; // Only fire on desktop (md breakpoint)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen((prev) => !prev);
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleCommandSelectTask = useCallback(
+    (taskId: string) => {
+      if (pathname !== '/tasks') {
+        // SPA navigate to tasks page with task param — tasks page reads this on mount
+        router.push(`/tasks?task=${taskId}`);
+      } else {
+        // Dispatch a custom event that the tasks page listens for
+        window.dispatchEvent(
+          new CustomEvent('command-palette:select-task', { detail: { taskId } }),
+        );
+      }
+    },
+    [pathname, router],
+  );
 
   // Show search bar and create task button only on task-related pages
   const showTaskBar = pathname === '/tasks' || pathname.startsWith('/tasks/') || pathname === '/calendar';
@@ -67,6 +99,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       className="w-full rounded-md border border-input bg-background px-9 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring"
                       value={searchActive ? query : ''}
                       onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                          setQuery('');
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
                       readOnly={!searchActive}
                     />
                   </>
@@ -96,6 +134,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             {children}
           </div>
         </main>
+
+        {/* Command palette (desktop only — triggered by Cmd+K) */}
+        <div className="hidden md:block">
+          <CommandPalette
+            open={commandPaletteOpen}
+            onOpenChange={setCommandPaletteOpen}
+            onSelectTask={handleCommandSelectTask}
+          />
+        </div>
 
         {/* Mobile bottom tab bar — visible below md */}
         <div className="md:hidden fixed bottom-0 inset-x-0 z-50">

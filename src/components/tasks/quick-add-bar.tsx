@@ -1,31 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Plus, Loader2 } from 'lucide-react';
 import { useCreateTask } from '@/hooks/use-create-task';
 
 interface QuickAddBarProps {
-  onOpenFullForm?: () => void;
   onTaskCreated?: (taskId: string) => void;
 }
 
-export function QuickAddBar({ onOpenFullForm, onTaskCreated }: QuickAddBarProps) {
+export function QuickAddBar({ onTaskCreated }: QuickAddBarProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { mutate, isPending, error } = useCreateTask();
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        // Only suppress the shortcut when a handler is wired up
-        if (onOpenFullForm) {
-          e.preventDefault();
-          onOpenFullForm();
-        }
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [onOpenFullForm]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
@@ -70,7 +55,7 @@ export function QuickAddBar({ onOpenFullForm, onTaskCreated }: QuickAddBarProps)
           disabled={isPending}
         />
         <span className="text-xs text-muted-foreground hidden sm:inline select-none">
-          ⌘K
+          Enter
         </span>
       </div>
       {errorMessage && (

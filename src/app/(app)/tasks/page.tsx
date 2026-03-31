@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { toast } from 'sonner';
 import {
@@ -9,6 +10,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -43,6 +45,7 @@ import { useTask } from '@/hooks/use-task';
 import { useAttentionItems } from '@/hooks/use-attention-items';
 import { useUpdateTask } from '@/hooks/use-update-task';
 import { useCloseTask } from '@/hooks/use-close-task';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useSearch } from '@/providers/search-provider';
 import { useCreateTaskAction } from '@/providers/create-task-provider';
 import { buildVirtualItems, type VirtualItem, type VirtualTaskItem } from '@/lib/group-tasks';
@@ -88,20 +91,25 @@ function SortableTaskCard({
 } & Omit<React.ComponentProps<typeof TaskCard>, 'task' | 'isDragging'>) {
   const {
     setNodeRef,
+    attributes,
+    listeners,
     transform,
     transition,
     isDragging,
   } = useSortable({ id: task.id });
 
-  const y = isDragging ? virtualStart : virtualStart + (transform?.y ?? 0);
-
+  // Use `top` for the virtualizer position so dnd-kit can independently
+  // track its own transform for drag displacement & neighbor shifts.
   const style: React.CSSProperties = {
     position: 'absolute',
-    top: 0,
+    top: virtualStart,
     left: 0,
     right: 0,
-    transform: `translate3d(0px, ${y}px, 0)`,
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : undefined,
     transition: isDragging ? undefined : transition,
+    zIndex: isDragging ? 1 : undefined,
   };
 
   return (
@@ -112,7 +120,11 @@ function SortableTaskCard({
       }}
       data-index={dataIndex}
       style={style}
-      className="px-1"
+      className="px-1 select-none"
+      {...attributes}
+      {...listeners}
+      aria-roledescription="sortable"
+      aria-describedby="dnd-instructions"
     >
       <TaskCard
         task={task}
@@ -205,6 +217,9 @@ function VirtualTaskList({
 
   return (
     <div ref={scrollRef} className="flex-1 overflow-y-auto pt-2">
+      <span id="dnd-instructions" className="sr-only">
+        Press Space to pick up a task, use arrow keys to move it, Space to drop, or Escape to cancel.
+      </span>
       <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
         <ul
           role="list"
@@ -287,7 +302,9 @@ export default function TasksPage() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const focusedIndexRef = useRef(focusedIndex);
+  const reorderInFlightRef = useRef(false);
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
   const { mutate: updateTaskMutate, isPending: isReorderPending } = useUpdateTask();
   const { mutate: closeTaskMutate } = useCloseTask();
   const { register: registerSearch, setQuery: setSearchContextQuery } = useSearch();
@@ -357,11 +374,11 @@ export default function TasksPage() {
   const { data: attentionData } = useAttentionItems();
   const attentionTasks = useMemo(() => attentionData?.data ?? [], [attentionData?.data]);
 
-  // Keep local ordering in sync with server data (server is source of truth for new data)
+  // Keep local ordering in sync with server data (server is source of truth for new data).
+  // During a drag-reorder (reorderInFlightRef) or mutation (isReorderPending), preserve
+  // the local order so the server refetch doesn't cause a visual snap-back.
   useEffect(() => {
-    if (isReorderPending) {
-      // During reorder, still merge in any new tasks so they aren't silently dropped
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: merges new server tasks into local drag-reorder state
+    if (reorderInFlightRef.current || isReorderPending) {
       setOrderedTaskIds((prev) => {
         const existingSet = new Set(prev);
         const newIds = tasks.map((t) => t.id).filter((id) => !existingSet.has(id));
@@ -402,6 +419,7 @@ export default function TasksPage() {
   const isDndEnabled = searchQuery.length < 2 && groupBy === 'none';
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: isDndEnabled ? 8 : Infinity } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: isDndEnabled ? 250 : 999999, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -410,16 +428,24 @@ export default function TasksPage() {
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    setActiveDragId(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id) {
+      setActiveDragId(null);
+      return;
+    }
 
     const oldIndex = orderedTasks.findIndex((t) => t.id === active.id);
     const newIndex = orderedTasks.findIndex((t) => t.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
+    if (oldIndex === -1 || newIndex === -1) {
+      setActiveDragId(null);
+      return;
+    }
 
     const reordered = arrayMove(orderedTasks, oldIndex, newIndex);
+    // Guard against sync effect resetting order before mutation completes
+    reorderInFlightRef.current = true;
     setOrderedTaskIds(reordered.map((t) => t.id));
+    setActiveDragId(null);
 
     // Compute new sort_order using midpoint approach
     const prev = reordered[newIndex - 1];
@@ -440,8 +466,16 @@ export default function TasksPage() {
       { id: active.id as string, data: { sortOrder: newSortOrder } },
       {
         onError: () => {
+          reorderInFlightRef.current = false;
           setOrderedTaskIds(tasks.map((t) => t.id));
           toast.error('Failed to reorder task');
+        },
+        onSettled: () => {
+          // Wait for the refetch triggered by useUpdateTask's onSettled to complete,
+          // then clear the reorder guard so server data can sync again.
+          void queryClient.invalidateQueries({ queryKey: ['tasks'] }).then(() => {
+            reorderInFlightRef.current = false;
+          });
         },
       },
     );
@@ -481,6 +515,26 @@ export default function TasksPage() {
     setSelectedTaskId(id);
     setIsRightPanelOpen(true);
   }, []);
+
+  // Listen for command palette task selection
+  useEffect(() => {
+    function handleCommandSelect(e: Event) {
+      const taskId = (e as CustomEvent<{ taskId: string }>).detail.taskId;
+      handleSelectTask(taskId);
+    }
+    window.addEventListener('command-palette:select-task', handleCommandSelect);
+    return () => window.removeEventListener('command-palette:select-task', handleCommandSelect);
+  }, [handleSelectTask]);
+
+  // Open task detail panel if navigated with ?task=<id> (e.g. from command palette)
+  useEffect(() => {
+    const taskParam = searchParams.get('task');
+    if (taskParam) {
+      handleSelectTask(taskParam);
+    }
+    // Only run on mount / when searchParams change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   function handleTagClick(tagName: string) {
     // Compute new tags from current state (consistent for both setState and URL sync)
@@ -544,78 +598,57 @@ export default function TasksPage() {
     focusedIndexRef.current = safeFocusedIndex;
   }, [safeFocusedIndex]);
 
-  // Keyboard navigation: Arrow keys, Enter, Space, F2, Escape, C (create)
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      // Don't fire when an interactive element is focused
-      const target = e.target as HTMLElement;
-      const tag = target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (target?.isContentEditable) return;
-      // Also skip if inside a dialog/sheet overlay
-      if (target?.closest('[data-slot="sheet-content"]')) return;
-
-      // C shortcut to open creation panel (desktop)
-      if (e.key === 'c' || e.key === 'C') {
-        if (!e.metaKey && !e.ctrlKey && !e.altKey) {
-          e.preventDefault();
-          // Close detail panel if open before opening creation
-          setSelectedTaskId(null);
-          setIsRightPanelOpen(false);
-          setIsCreationDialogOpen(true);
-          return;
+  // Centralized keyboard shortcuts (C, /, E, Space, Enter, Arrows, F2, Escape)
+  useKeyboardShortcuts(
+    {
+      onCreateTask: () => {
+        setSelectedTaskId(null);
+        setIsRightPanelOpen(false);
+        setIsCreationDialogOpen(true);
+      },
+      onFocusSearch: () => {
+        // Focus the desktop search input via the search context
+        const searchInput = document.querySelector<HTMLInputElement>(
+          'header input[aria-label="Search tasks"]',
+        );
+        searchInput?.focus();
+      },
+      onEditFocused: () => {
+        const idx = focusedIndexRef.current;
+        if (idx >= 0 && idx < taskOnlyItems.length) {
+          handleSelectTask(taskOnlyItems[idx].id);
         }
-      }
-
-      // For Space key, only intercept on body/task-list to avoid hijacking buttons/links
-      if (e.key === ' ' && tag !== 'BODY' && !target?.closest('[role="list"]')) return;
-      if (taskOnlyItems.length === 0) return;
-
-      // Read latest focused index from ref to avoid stale closure
-      const currentFocusedIndex = focusedIndexRef.current;
-
-      switch (e.key) {
-        case 'ArrowDown': {
-          e.preventDefault();
-          setFocusedIndex((prev) => Math.min(prev + 1, taskOnlyItems.length - 1));
-          break;
+      },
+      onToggleFocused: () => {
+        const idx = focusedIndexRef.current;
+        if (idx >= 0 && idx < taskOnlyItems.length) {
+          handleCheckboxToggle(taskOnlyItems[idx].id);
         }
-        case 'ArrowUp': {
-          e.preventDefault();
-          setFocusedIndex((prev) => Math.max(prev - 1, 0));
-          break;
+      },
+      onSelectFocused: () => {
+        const idx = focusedIndexRef.current;
+        if (idx >= 0 && idx < taskOnlyItems.length) {
+          handleSelectTask(taskOnlyItems[idx].id);
         }
-        case 'Enter': {
-          if (currentFocusedIndex >= 0) {
-            e.preventDefault();
-            handleSelectTask(taskOnlyItems[currentFocusedIndex].id);
-          }
-          break;
+      },
+      onMoveDown: () => {
+        setFocusedIndex((prev) => Math.min(prev + 1, taskOnlyItems.length - 1));
+      },
+      onMoveUp: () => {
+        setFocusedIndex((prev) => Math.max(prev - 1, 0));
+      },
+      onEditModeFocused: () => {
+        const idx = focusedIndexRef.current;
+        if (idx >= 0 && idx < taskOnlyItems.length) {
+          setEditingTaskId(taskOnlyItems[idx].id);
         }
-        case ' ': {
-          if (currentFocusedIndex >= 0) {
-            e.preventDefault();
-            handleCheckboxToggle(taskOnlyItems[currentFocusedIndex].id);
-          }
-          break;
-        }
-        case 'F2': {
-          if (currentFocusedIndex >= 0) {
-            e.preventDefault();
-            setEditingTaskId(taskOnlyItems[currentFocusedIndex].id);
-          }
-          break;
-        }
-        case 'Escape': {
-          setFocusedIndex(-1);
-          break;
-        }
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [taskOnlyItems, handleCheckboxToggle, handleSelectTask]);
+      },
+      onEscape: () => {
+        setFocusedIndex(-1);
+      },
+    },
+    { taskCount: taskOnlyItems.length, focusedIndex: safeFocusedIndex },
+  );
 
   const activeDragTask = orderedTasks.find((t) => t.id === activeDragId) ?? null;
 
@@ -634,6 +667,12 @@ export default function TasksPage() {
               const value = e.target.value;
               setSearchQuery(value);
               setSearchContextQuery(value);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                clearSearch();
+                (e.target as HTMLInputElement).blur();
+              }
             }}
             className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
@@ -712,6 +751,7 @@ export default function TasksPage() {
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+
             onDragEnd={handleDragEnd}
           >
             <VirtualTaskList
@@ -730,7 +770,7 @@ export default function TasksPage() {
               onEditCancel={handleEditCancel}
               scrollRef={scrollRef}
             />
-            <DragOverlay>
+            <DragOverlay dropAnimation={null}>
               {activeDragTask && (
                 <div className="shadow-lg rounded-lg bg-background border border-border opacity-95">
                   <TaskCard

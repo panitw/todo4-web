@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { GripVertical } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -210,8 +210,8 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isB
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
                 archiveMutate(task.id, {
-                  onSuccess: () => toast.success('Task archived'),
-                  onError: () => toast.error('Failed to archive task'),
+                  onSuccess: () => showSuccess('Task archived'),
+                  onError: () => showError('Failed to archive task'),
                 });
               }}>
                 Archive
@@ -221,8 +221,8 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isB
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
                 restoreMutate(task.id, {
-                  onSuccess: () => toast.success('Task restored'),
-                  onError: () => toast.error('Failed to restore task'),
+                  onSuccess: () => showSuccess('Task restored'),
+                  onError: () => showError('Failed to restore task'),
                 });
               }}>
                 Restore
@@ -261,9 +261,9 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isB
                 deleteMutate(task.id, {
                   onSuccess: () => {
                     setIsDeleteDialogOpen(false);
-                    toast.success('Task deleted');
+                    showSuccess('Task deleted');
                   },
-                  onError: () => toast.error('Failed to delete task'),
+                  onError: () => showError('Failed to delete task'),
                 });
               }}
             >

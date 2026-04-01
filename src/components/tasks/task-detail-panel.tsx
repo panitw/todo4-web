@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { Bot, X } from 'lucide-react';
 import { type Task, type TaskHistory, type TaskComment } from '@/lib/api/tasks';
 import { useUpdateTask } from '@/hooks/use-update-task';
@@ -94,11 +94,11 @@ function StatusTransitionBar({ task }: { task: Task }) {
   function handleTransition(targetStatus: string) {
     if (targetStatus === 'closed') {
       closeMutate({ id: task.id, force: true }, {
-        onError: () => toast.error('Failed to close task'),
+        onError: () => showError('Failed to close task'),
       });
     } else {
       updateMutate({ id: task.id, data: { status: targetStatus as 'open' | 'in_progress' } }, {
-        onError: () => toast.error('Failed to update status'),
+        onError: () => showError('Failed to update status'),
       });
     }
   }
@@ -147,15 +147,15 @@ function ConfirmationActionBar({ task, onClose }: { task: Task; onClose: () => v
       <p className="flex-1 text-sm text-orange-800">Pending deletion — approve or reject.</p>
       <Button size="sm" variant="outline" disabled={isRestoring || isDeleting}
         onClick={() => restoreMutate(task.id, {
-          onSuccess: () => toast.success('Task restored'),
-          onError: () => toast.error('Failed to restore task'),
+          onSuccess: () => showSuccess('Task restored'),
+          onError: () => showError('Failed to restore task'),
         })}
         className="border-red-300 text-red-700 hover:bg-red-50"
       >Reject</Button>
       <Button size="sm" variant="gradient" disabled={isDeleting || isRestoring}
         onClick={() => deleteMutate(task.id, {
-          onSuccess: () => { onClose(); toast.success('Task deleted'); },
-          onError: () => toast.error('Failed to delete task'),
+          onSuccess: () => { onClose(); showSuccess('Task deleted'); },
+          onError: () => showError('Failed to delete task'),
         })}
       >Approve</Button>
     </div>
@@ -179,17 +179,17 @@ function DueDateInput({ task }: { task: Task }) {
     // Validate date format before sending to server
     if (localDate && !/^\d{4}-\d{2}-\d{2}$/.test(localDate)) {
       setLocalDate(serverDate);
-      toast.error('Invalid date format');
+      showError('Invalid date format');
       return;
     }
     mutate({ id: task.id, data: { dueDate: localDate || null } }, {
-      onError: () => { setLocalDate(serverDate); toast.error('Failed to update due date'); },
+      onError: () => { setLocalDate(serverDate); showError('Failed to update due date'); },
     });
   }, [localDate, task.dueDate, task.id, mutate]);
 
   return (
     <Input type="date" value={localDate} onChange={(e) => setLocalDate(e.target.value)}
-      className="w-36 h-7 text-xs" onBlur={handleBlur} />
+      className="w-36 h-7 text-xs" onBlur={handleBlur} aria-label="Due date" />
   );
 }
 
@@ -208,12 +208,12 @@ function InlineEditableTitle({ task }: { task: Task }) {
     if (saveTriggeredRef.current) return;
     saveTriggeredRef.current = true;
     const trimmed = localTitle.trim();
-    if (!trimmed) { toast.error('Title is required'); setLocalTitle(task.title); setIsEditing(false); saveTriggeredRef.current = false; return; }
+    if (!trimmed) { showError('Title is required'); setLocalTitle(task.title); setIsEditing(false); saveTriggeredRef.current = false; return; }
     if (trimmed.length > 500) { setError('Max 500 characters'); saveTriggeredRef.current = false; return; }
     setError(null);
     if (trimmed === task.title) { setIsEditing(false); saveTriggeredRef.current = false; return; }
     mutate({ id: task.id, data: { title: trimmed } }, {
-      onError: () => { setLocalTitle(task.title); toast.error('Failed to update title'); },
+      onError: () => { setLocalTitle(task.title); showError('Failed to update title'); },
       onSettled: () => { setIsEditing(false); saveTriggeredRef.current = false; },
     });
   }
@@ -234,9 +234,12 @@ function InlineEditableTitle({ task }: { task: Task }) {
           if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
           if (e.key === 'Escape') { setLocalTitle(task.title); setIsEditing(false); setError(null); }
         }}
-        maxLength={500} className="text-base font-semibold h-auto py-0.5" aria-invalid={!!error}
+        maxLength={500} className="text-base font-semibold h-auto py-0.5"
+        aria-label="Task title"
+        aria-invalid={!!error}
+        aria-describedby={error ? 'detail-title-error' : undefined}
       />
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p id="detail-title-error" className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -259,7 +262,7 @@ function DescriptionEditor({ task }: { task: Task }) {
     setError(null);
     if (localDesc === (task.description ?? '')) { setIsEditing(false); saveTriggeredRef.current = false; return; }
     mutate({ id: task.id, data: { description: localDesc } }, {
-      onError: () => { setLocalDesc(task.description ?? ''); toast.error('Failed to update description'); },
+      onError: () => { setLocalDesc(task.description ?? ''); showError('Failed to update description'); },
       onSettled: () => { setIsEditing(false); saveTriggeredRef.current = false; },
     });
   }
@@ -282,9 +285,12 @@ function DescriptionEditor({ task }: { task: Task }) {
           if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSave(); }
           if (e.key === 'Escape') { setLocalDesc(task.description ?? ''); setIsEditing(false); setError(null); }
         }}
-        maxLength={10000} className="min-h-[80px] text-sm" aria-invalid={!!error}
+        maxLength={10000} className="min-h-[80px] text-sm"
+        aria-label="Description"
+        aria-invalid={!!error}
+        aria-describedby={error ? 'detail-desc-error' : undefined}
       />
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p id="detail-desc-error" className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
@@ -343,7 +349,7 @@ function CommentsSection({ taskId }: { taskId: string }) {
   function handleSubmit() {
     const trimmed = body.trim();
     if (!trimmed) return;
-    addComment(trimmed, { onSuccess: () => setBody(''), onError: () => toast.error('Failed to add comment') });
+    addComment(trimmed, { onSuccess: () => setBody(''), onError: () => showError('Failed to add comment') });
   }
 
   return (
@@ -359,6 +365,7 @@ function CommentsSection({ taskId }: { taskId: string }) {
         <Textarea placeholder="Add a comment..." value={body}
           onChange={(e) => setBody(e.target.value)} className="text-sm min-h-[48px] flex-1"
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+          aria-label="Add a comment"
         />
         <Button size="sm" variant="gradient" disabled={isSubmitting || !body.trim()} onClick={handleSubmit}>
           {isSubmitting ? 'Posting...' : 'Post'}
@@ -390,7 +397,7 @@ function TagsEditor({ task }: { task: Task }) {
       const tagsToSave = pendingTagsRef.current;
       if (!tagsToSave) return;
       mutate({ id: task.id, data: { tags: tagsToSave } }, {
-        onError: () => { setLocalTags(task.tags ?? []); toast.error('Failed to update tags'); },
+        onError: () => { setLocalTags(task.tags ?? []); showError('Failed to update tags'); },
         onSettled: () => { pendingTagsRef.current = null; },
       });
     }, 300);
@@ -438,6 +445,7 @@ function TagsEditor({ task }: { task: Task }) {
             if (e.key === 'Escape') setShowSuggestions(false);
           }}
           placeholder={localTags.length === 0 ? 'Type to add tags...' : ''}
+          aria-label="Add tag"
           className="flex-1 min-w-[100px] bg-transparent text-sm outline-none border-none shadow-none focus:ring-0 focus:outline-none placeholder:text-muted-foreground"
           style={{ outline: 'none', boxShadow: 'none' }}
         />
@@ -489,12 +497,12 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
         <div className="flex items-center gap-1">
           {task.status === 'closed' && (
             <Button size="sm" variant="outline" onClick={() =>
-              archiveMutate(task.id, { onSuccess: () => toast.success('Archived'), onError: () => toast.error('Failed') })
+              archiveMutate(task.id, { onSuccess: () => showSuccess('Archived'), onError: () => showError('Failed') })
             }>Archive</Button>
           )}
           {task.status === 'archived' && (
             <Button size="sm" variant="outline" onClick={() =>
-              restoreMutate(task.id, { onSuccess: () => toast.success('Restored'), onError: () => toast.error('Failed') })
+              restoreMutate(task.id, { onSuccess: () => showSuccess('Restored'), onError: () => showError('Failed') })
             }>Restore</Button>
           )}
           {task.status !== 'pending_deletion' && (
@@ -525,16 +533,16 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={task.priority} disabled={isPriorityPending}
               onValueChange={(v) => updateMutate({ id: task.id, data: { priority: v as Task['priority'] } },
-                { onError: () => toast.error('Failed to update priority') })}
+                { onError: () => showError('Failed to update priority') })}
             >
-              <SelectTrigger className="w-auto h-7 text-xs">
+              <SelectTrigger className="w-auto h-7 text-xs" aria-label="Priority">
                 <span className={PRIORITY_COLORS[task.priority]}>&#9679;</span>
                 <span>{PRIORITY_LABELS[task.priority]}</span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="p1"><span className="text-red-600">&#9679;</span> Critical</SelectItem>
-                <SelectItem value="p2"><span className="text-orange-500">&#9679;</span> High</SelectItem>
-                <SelectItem value="p3"><span className="text-blue-500">&#9679;</span> Medium</SelectItem>
+                <SelectItem value="p2"><span className="text-orange-700">&#9679;</span> High</SelectItem>
+                <SelectItem value="p3"><span className="text-blue-600">&#9679;</span> Medium</SelectItem>
                 <SelectItem value="p4"><span className="text-gray-400">&#9679;</span> Low</SelectItem>
               </SelectContent>
             </Select>
@@ -609,8 +617,8 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => deleteMutate(task.id, {
-              onSuccess: () => { setIsDeleteDialogOpen(false); onClose(); toast.success('Task deleted'); },
-              onError: () => toast.error('Failed to delete task'),
+              onSuccess: () => { setIsDeleteDialogOpen(false); onClose(); showSuccess('Task deleted'); },
+              onError: () => showError('Failed to delete task'),
             })}>Delete</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

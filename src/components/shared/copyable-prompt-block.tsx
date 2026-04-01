@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 
 interface CopyablePromptBlockProps {
   prompt: string;
@@ -15,10 +15,10 @@ export function CopyablePromptBlock({ prompt }: CopyablePromptBlockProps) {
     try {
       await navigator.clipboard.writeText(prompt);
       setCopied(true);
-      toast.success('Copied to clipboard');
+      showSuccess('Copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error('Failed to copy');
+      showError('Failed to copy');
     }
   }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { AlertCircle, HelpCircle, Bot, Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -57,11 +57,11 @@ export function AttentionCard({ task, onSelectTask, disabled }: AttentionCardPro
     deleteMutate(task.id, {
       onSuccess: () => {
         setIsCollapsed(true);
-        toast.success('Task deleted');
+        showSuccess('Task deleted');
       },
       onError: () => {
         submittedRef.current = false;
-        toast.error('Failed to delete task.', {
+        showError('Failed to delete task.', {
           duration: Infinity,
           action: { label: 'Retry', onClick: handleApprove },
         });
@@ -79,11 +79,11 @@ export function AttentionCard({ task, onSelectTask, disabled }: AttentionCardPro
       restoreMutate(task.id, {
         onSuccess: () => {
           setIsCollapsed(true);
-          toast.success('Task restored');
+          showSuccess('Task restored');
         },
         onError: () => {
           submittedRef.current = false;
-          toast.error('Failed to restore task.', {
+          showError('Failed to restore task.', {
             duration: Infinity,
             action: { label: 'Retry', onClick: handleRejectSubmit },
           });
@@ -96,7 +96,7 @@ export function AttentionCard({ task, onSelectTask, disabled }: AttentionCardPro
         onSuccess: doRestore,
         onError: () => {
           submittedRef.current = false;
-          toast.error('Failed to post rejection reason.', {
+          showError('Failed to post rejection reason.', {
             duration: Infinity,
             action: { label: 'Retry', onClick: handleRejectSubmit },
           });
@@ -121,18 +121,18 @@ export function AttentionCard({ task, onSelectTask, disabled }: AttentionCardPro
           commentMutate(answer.trim(), {
             onSuccess: () => {
               setIsCollapsed(true);
-              toast.success('Answer sent — task resumed');
+              showSuccess('Answer sent — task resumed');
             },
             onError: () => {
               // Status updated but comment failed — card still collapses since task resumed
               setIsCollapsed(true);
-              toast.error('Task resumed, but failed to post your answer as a comment.');
+              showError('Task resumed, but failed to post your answer as a comment.');
             },
           });
         },
         onError: () => {
           submittedRef.current = false;
-          toast.error('Failed to resume task.', {
+          showError('Failed to resume task.', {
             duration: Infinity,
             action: { label: 'Retry', onClick: handleAnswerSubmit },
           });

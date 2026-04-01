@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { AttentionCard } from './attention-card';
 import type { Task } from '@/lib/api/tasks';
@@ -28,8 +28,8 @@ export function AttentionBlock({ tasks, onSelectTask }: AttentionBlockProps) {
     bulkMutate(
       { ids: pendingConfirmationIds, action: 'delete' },
       {
-        onSuccess: () => toast.success(`${pendingConfirmationIds.length} tasks deleted`),
-        onError: () => toast.error('Failed to approve all. Please try again.', { duration: Infinity }),
+        onSuccess: () => showSuccess(`${pendingConfirmationIds.length} tasks deleted`),
+        onError: () => showError('Failed to approve all. Please try again.', { duration: Infinity }),
       },
     );
   }

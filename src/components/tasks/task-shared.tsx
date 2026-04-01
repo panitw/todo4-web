@@ -5,7 +5,7 @@ export const PRIORITY_LABELS: Record<string, string> = {
 };
 
 export const PRIORITY_COLORS: Record<string, string> = {
-  p1: 'text-red-600', p2: 'text-orange-500', p3: 'text-blue-500', p4: 'text-gray-400',
+  p1: 'text-red-600', p2: 'text-orange-700', p3: 'text-blue-600', p4: 'text-gray-400',
 };
 
 export function SectionHeader({ children }: { children: React.ReactNode }) {

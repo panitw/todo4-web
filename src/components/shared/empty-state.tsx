@@ -20,10 +20,10 @@ export function EmptyState({
   children,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center flex-1 py-16 px-6 text-center gap-4">
+    <div className="flex flex-col items-center justify-center flex-1 py-4 px-6 text-center gap-4">
       {Icon && (
         <Icon
-          className="text-muted-foreground/50"
+          className="text-muted-foreground"
           size={32}
           aria-hidden="true"
         />
@@ -31,7 +31,7 @@ export function EmptyState({
       <div className="flex flex-col gap-1.5">
         <p className="text-lg font-medium text-muted-foreground">{heading}</p>
         {description && (
-          <p className="text-sm text-muted-foreground/70 max-w-md">
+          <p className="text-sm text-muted-foreground max-w-md">
             {description}
           </p>
         )}

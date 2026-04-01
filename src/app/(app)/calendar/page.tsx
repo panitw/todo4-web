@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { X } from 'lucide-react';
 import { CalendarHeader } from '@/components/calendar/calendar-header';
 import { CalendarGrid, toDateKey } from '@/components/calendar/calendar-grid';
@@ -85,13 +85,13 @@ export default function CalendarPage() {
 
   useEffect(() => {
     if (taskFetchError) {
-      toast.error('Failed to load task details');
+      showError('Failed to load task details');
     }
   }, [taskFetchError]);
 
   useEffect(() => {
     if (calendarError) {
-      toast.error('Failed to load calendar tasks');
+      showError('Failed to load calendar tasks');
     }
   }, [calendarError]);
 
@@ -146,13 +146,13 @@ export default function CalendarPage() {
     if (!toggleable.has(task.status)) return;
     if (task.status === 'closed') {
       updateTaskMutate({ id, data: { status: 'open' } }, {
-        onSuccess: () => toast.success('Task reopened'),
-        onError: () => toast.error('Failed to reopen task'),
+        onSuccess: () => showSuccess('Task reopened'),
+        onError: () => showError('Failed to reopen task'),
       });
     } else {
       closeTaskMutate({ id, force: true }, {
-        onSuccess: () => toast.success('Task done'),
-        onError: () => toast.error('Failed to close task'),
+        onSuccess: () => showSuccess('Task done'),
+        onError: () => showError('Failed to close task'),
       });
     }
   }, [tasksForDate, closeTaskMutate, updateTaskMutate]);

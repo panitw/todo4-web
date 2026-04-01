@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -45,10 +45,10 @@ export function BulkActionBar({
       { ids: selectedIds, action: 'close' },
       {
         onSuccess: (result) => {
-          toast.success(`${result.processed} task${result.processed !== 1 ? 's' : ''} marked complete`);
+          showSuccess(`${result.processed} task${result.processed !== 1 ? 's' : ''} marked complete`);
           onSuccess();
         },
-        onError: () => toast.error('Failed to mark tasks complete', {
+        onError: () => showError('Failed to mark tasks complete', {
           action: { label: 'Retry', onClick: handleMarkComplete },
         }),
       },
@@ -60,10 +60,10 @@ export function BulkActionBar({
       { ids: selectedIds, action: 'set_priority', priority },
       {
         onSuccess: (result) => {
-          toast.success(`Priority updated for ${result.processed} task${result.processed !== 1 ? 's' : ''}`);
+          showSuccess(`Priority updated for ${result.processed} task${result.processed !== 1 ? 's' : ''}`);
           onSuccess();
         },
-        onError: () => toast.error('Failed to set priority', {
+        onError: () => showError('Failed to set priority', {
           action: { label: 'Retry', onClick: () => handleSetPriority(priority) },
         }),
       },
@@ -77,12 +77,12 @@ export function BulkActionBar({
       {
         onSuccess: (result) => {
           const label = destructiveAction === 'archive' ? 'archived' : 'deleted';
-          toast.success(`${result.processed} task${result.processed !== 1 ? 's' : ''} ${label}`);
+          showSuccess(`${result.processed} task${result.processed !== 1 ? 's' : ''} ${label}`);
           setDestructiveAction(null);
           onSuccess();
         },
         onError: () => {
-          toast.error(`Failed to ${destructiveAction} tasks`, {
+          showError(`Failed to ${destructiveAction} tasks`, {
             action: { label: 'Retry', onClick: handleDestructiveConfirm },
           });
           setDestructiveAction(null);

@@ -69,7 +69,7 @@
     --todo-border: #E4E4E7;        /* zinc-200 — dividers, input borders */
     --todo-text-primary: #18181B;  /* zinc-900 — task titles, headings */
     --todo-text-secondary: #71717A; /* zinc-500 — metadata, timestamps */
-    --todo-text-muted: #A1A1AA;    /* zinc-400 — placeholder, disabled */
+    --todo-text-muted: #71717A;    /* zinc-500 — placeholder, disabled (4.5:1 on white) */
 
     /* === Primary Interactive Color (indigo) === */
     --todo-primary: #4F46E5;       /* indigo-600 — buttons, links, focus rings */
@@ -101,8 +101,8 @@
 
     /* === Priority Colors === */
     --todo-priority-critical: #dc2626;     /* red-600 — text: "Critical" */
-    --todo-priority-high: #f97316;         /* orange-500 — text: "High" */
-    --todo-priority-medium: #3b82f6;       /* blue-500 — text: "Medium" */
+    --todo-priority-high: #c2410c;         /* orange-700 — text: "High" */
+    --todo-priority-medium: #2563eb;       /* blue-600 — text: "Medium" */
     --todo-priority-low: #94a3b8;          /* slate-400 — text: "Low" */
 
     /* === Needs Attention section === */
@@ -197,6 +197,17 @@
   outline-offset: 2px;
 }
 
+/* === Reduced Motion (UX-DR15) === */
+/* Preserve functional animations (loading spinners) while disabling decorative motion */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin), *:not(.animate-spin)::before, *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -209,7 +220,7 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  --muted-foreground: #737373;
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);

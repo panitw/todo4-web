@@ -4,6 +4,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { SearchProvider } from "@/providers/search-provider";
 import { CreateTaskProvider } from "@/providers/create-task-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { AxeDevTools } from "@/components/shared/axe-dev-tools";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,8 +20,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export default function RootLayout({
@@ -41,6 +40,7 @@ export default function RootLayout({
             </CreateTaskProvider>
           </SearchProvider>
           <Toaster />
+          <AxeDevTools />
         </QueryProvider>
       </body>
     </html>

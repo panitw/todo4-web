@@ -211,6 +211,7 @@ export function TaskCreationDialog({
                 placeholder="Task title"
                 maxLength={500}
                 className="text-base font-semibold h-auto py-1.5 border-none shadow-none px-1 focus-visible:border-none placeholder:text-muted-foreground/60"
+                aria-label="Task title"
                 aria-required="true"
                 aria-invalid={!!errors.title}
                 aria-describedby={errors.title ? 'create-title-error' : undefined}
@@ -221,7 +222,7 @@ export function TaskCreationDialog({
             {/* Metadata row — matches detail panel */}
             <div className="flex items-center gap-2 flex-wrap">
               <Select value={form.status} onValueChange={(v) => { if (v) handleChange('status', v); }}>
-                <SelectTrigger className="w-auto h-7 text-xs">
+                <SelectTrigger className="w-auto h-7 text-xs" aria-label="Status">
                   <span className={`inline-block w-2 h-2 rounded-full ${statusConfig.dot} border ${statusConfig.border}`} />
                   <span>{statusConfig.label}</span>
                 </SelectTrigger>
@@ -232,14 +233,14 @@ export function TaskCreationDialog({
               </Select>
 
               <Select value={form.priority} onValueChange={(v) => { if (v) handleChange('priority', v); }}>
-                <SelectTrigger className="w-auto h-7 text-xs">
+                <SelectTrigger className="w-auto h-7 text-xs" aria-label="Priority">
                   <span className={PRIORITY_COLORS[form.priority]}>&#9679;</span>
                   <span>{PRIORITY_LABELS[form.priority]}</span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="p1"><span className="text-red-600">&#9679;</span> Critical</SelectItem>
-                  <SelectItem value="p2"><span className="text-orange-500">&#9679;</span> High</SelectItem>
-                  <SelectItem value="p3"><span className="text-blue-500">&#9679;</span> Medium</SelectItem>
+                  <SelectItem value="p2"><span className="text-orange-700">&#9679;</span> High</SelectItem>
+                  <SelectItem value="p3"><span className="text-blue-600">&#9679;</span> Medium</SelectItem>
                   <SelectItem value="p4"><span className="text-gray-400">&#9679;</span> Low</SelectItem>
                 </SelectContent>
               </Select>
@@ -249,6 +250,7 @@ export function TaskCreationDialog({
                 value={form.dueDate}
                 onChange={(e) => handleChange('dueDate', e.target.value)}
                 className="w-36 h-7 text-xs"
+                aria-label="Due date"
               />
             </div>
 

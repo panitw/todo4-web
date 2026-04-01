@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { MoreVertical, Calendar, Bot, Check as CheckIcon } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -33,8 +33,8 @@ import { AgentProvenanceBadge } from '@/components/shared/agent-provenance-badge
 
 const PRIORITY_CONFIG: Record<string, { dotClass: string; textClass: string; label: string }> = {
   p1: { dotClass: 'bg-[#dc2626]', textClass: 'text-[#dc2626]', label: 'Critical' },
-  p2: { dotClass: 'bg-[#f97316]', textClass: 'text-[#f97316]', label: 'High' },
-  p3: { dotClass: 'bg-[#3b82f6]', textClass: 'text-[#3b82f6]', label: 'Medium' },
+  p2: { dotClass: 'bg-[#c2410c]', textClass: 'text-[#c2410c]', label: 'High' },
+  p3: { dotClass: 'bg-[#2563eb]', textClass: 'text-[#2563eb]', label: 'Medium' },
   p4: { dotClass: 'bg-[#94a3b8]', textClass: 'text-[#94a3b8]', label: 'Low' },
 };
 
@@ -181,7 +181,6 @@ export function TaskCard({
   return (
     <>
       <div
-        role="button"
         aria-label={`Task: ${task.title}, Priority: ${priority.label}, Status: ${statusPill.label}${task.dueDate ? `, Due: ${formatDate(task.dueDate)}` : ''}${overdue ? ', Overdue' : ''}`}
         tabIndex={-1}
         onClick={() => onSelect(task.id)}
@@ -306,8 +305,8 @@ export function TaskCard({
                 <DropdownMenuItem onClick={(e) => {
                   e.stopPropagation();
                   archiveMutate(task.id, {
-                    onSuccess: () => toast.success('Task archived'),
-                    onError: () => toast.error('Failed to archive task'),
+                    onSuccess: () => showSuccess('Task archived'),
+                    onError: () => showError('Failed to archive task'),
                   });
                 }}>
                   Archive
@@ -317,8 +316,8 @@ export function TaskCard({
                 <DropdownMenuItem onClick={(e) => {
                   e.stopPropagation();
                   restoreMutate(task.id, {
-                    onSuccess: () => toast.success('Task restored'),
-                    onError: () => toast.error('Failed to restore task'),
+                    onSuccess: () => showSuccess('Task restored'),
+                    onError: () => showError('Failed to restore task'),
                   });
                 }}>
                   Restore
@@ -420,9 +419,9 @@ export function TaskCard({
                 deleteMutate(task.id, {
                   onSuccess: () => {
                     setIsDeleteDialogOpen(false);
-                    toast.success('Task deleted');
+                    showSuccess('Task deleted');
                   },
-                  onError: () => toast.error('Failed to delete task'),
+                  onError: () => showError('Failed to delete task'),
                 });
               }}
             >

@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateTask, type Task, type UpdateTaskInput } from '@/lib/api/tasks';
+import { updateTask, type Task, type UpdateTaskInput, type TaskListMeta } from '@/lib/api/tasks';
 
 export function useUpdateTask() {
   const queryClient = useQueryClient();
@@ -12,7 +12,7 @@ export function useUpdateTask() {
       await queryClient.cancelQueries({ queryKey: ['task', id] });
 
       // Snapshot previous values for rollback
-      const previousTasks = queryClient.getQueryData(['tasks']);
+      const previousTasks = queryClient.getQueriesData<{ data: Task[]; meta: TaskListMeta }>({ queryKey: ['tasks'] });
       const previousTask = queryClient.getQueryData<Task>(['task', id]);
 
       // Optimistically update the single task cache
@@ -20,9 +20,22 @@ export function useUpdateTask() {
         queryClient.setQueryData<Task>(['task', id], {
           ...previousTask,
           ...data,
-          // dueDate: keep as string (UpdateTaskInput uses string | null)
         } as Task);
       }
+
+      // Optimistically update in all task list caches
+      queryClient.setQueriesData<{ data: Task[]; meta: TaskListMeta }>(
+        { queryKey: ['tasks'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((t) =>
+              t.id === id ? { ...t, ...data } as Task : t,
+            ),
+          };
+        },
+      );
 
       return { previousTasks, previousTask, id };
     },
@@ -31,8 +44,10 @@ export function useUpdateTask() {
       if (context?.previousTask !== undefined) {
         queryClient.setQueryData(['task', id], context.previousTask);
       }
-      if (context?.previousTasks !== undefined) {
-        queryClient.setQueryData(['tasks'], context.previousTasks);
+      if (context?.previousTasks) {
+        for (const [queryKey, data] of context.previousTasks) {
+          queryClient.setQueryData(queryKey, data);
+        }
       }
     },
     onSuccess: (updatedTask: Task) => {

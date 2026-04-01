@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -33,7 +33,7 @@ export function CloseTaskDialog({ taskId, open, onOpenChange }: CloseTaskDialogP
           onOpenChange(false);
           setCompletionNote('');
           setForceRequired(false);
-          toast.success('Task closed');
+          showSuccess('Task closed');
         },
         onError: (err: unknown) => {
           const code = (err as { code?: string })?.code;
@@ -41,7 +41,7 @@ export function CloseTaskDialog({ taskId, open, onOpenChange }: CloseTaskDialogP
           if (code === 'incomplete_subtasks' || message.includes('incomplete_subtasks')) {
             setForceRequired(true);
           } else {
-            toast.error('Failed to close task');
+            showError('Failed to close task');
           }
         },
       },

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { toast } from 'sonner';
+import { showError } from '@/lib/toast';
 import {
   DndContext,
   closestCenter,
@@ -120,7 +120,7 @@ export function SubtaskPanel({ taskId }: { taskId: string }) {
     inputRef.current?.focus();
     createMutate(title, {
       onError: () => {
-        toast.error('Failed to add subtask');
+        showError('Failed to add subtask');
         setNewTitle(title);
       },
     });
@@ -136,13 +136,13 @@ export function SubtaskPanel({ taskId }: { taskId: string }) {
   function handleToggle(subtaskId: string, completed: boolean) {
     updateMutate(
       { subtaskId, data: { completed } },
-      { onError: () => toast.error('Failed to update subtask') },
+      { onError: () => showError('Failed to update subtask') },
     );
   }
 
   function handleDelete(subtaskId: string) {
     deleteMutate(subtaskId, {
-      onError: () => toast.error('Failed to delete subtask'),
+      onError: () => showError('Failed to delete subtask'),
     });
   }
 
@@ -156,7 +156,7 @@ export function SubtaskPanel({ taskId }: { taskId: string }) {
 
     updateMutate(
       { subtaskId: active.id as string, data: { sortOrder: newIndex } },
-      { onError: () => toast.error('Failed to reorder subtasks') },
+      { onError: () => showError('Failed to reorder subtasks') },
     );
   }
 

@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { toast } from 'sonner';
+import { showError, showSuccess } from '@/lib/toast';
 import {
   DndContext,
   DragOverlay,
@@ -123,6 +124,7 @@ function SortableTaskCard({
       className="px-1 select-none"
       {...attributes}
       {...listeners}
+      role="listitem"
       aria-roledescription="sortable"
       aria-describedby="dnd-instructions"
     >
@@ -370,6 +372,13 @@ export default function TasksPage() {
 
   const tasks = useMemo(() => data?.data ?? [], [data?.data]);
 
+  // Check if there are ANY tasks at all (across all statuses) for onboarding detection.
+  // The API excludes closed/archived by default, so we must explicitly include them.
+  const { data: allTasksData, isPending: isAllTasksPending } = useTasks({
+    status: ['open', 'in_progress', 'closed', 'waiting_for_human', 'blocked', 'pending_deletion', 'archived'],
+  });
+  const hasAnyTasks = isAllTasksPending || (allTasksData?.data?.length ?? 0) > 0;
+
   // Attention items (pending_deletion + waiting_for_human) — polled every 30s
   const { data: attentionData } = useAttentionItems();
   const attentionTasks = useMemo(() => attentionData?.data ?? [], [attentionData?.data]);
@@ -468,7 +477,7 @@ export default function TasksPage() {
         onError: () => {
           reorderInFlightRef.current = false;
           setOrderedTaskIds(tasks.map((t) => t.id));
-          toast.error('Failed to reorder task');
+          showError('Failed to reorder task');
         },
         onSettled: () => {
           // Wait for the refetch triggered by useUpdateTask's onSettled to complete,
@@ -503,7 +512,7 @@ export default function TasksPage() {
 
   useEffect(() => {
     if (taskFetchError) {
-      toast.error('Failed to load task details');
+      showError('Failed to load task details');
     }
   }, [taskFetchError]);
 
@@ -560,13 +569,13 @@ export default function TasksPage() {
     if (!toggleable.has(task.status)) return;
     if (task.status === 'closed') {
       updateTaskMutate({ id, data: { status: 'open' } }, {
-        onSuccess: () => toast.success('Task reopened'),
-        onError: () => toast.error('Failed to reopen task'),
+        onSuccess: () => showSuccess('Task reopened'),
+        onError: () => showError('Failed to reopen task'),
       });
     } else {
       closeTaskMutate({ id, force: true }, {
-        onSuccess: () => toast.success('Task done'),
-        onError: () => toast.error('Failed to close task'),
+        onSuccess: () => showSuccess('Task done'),
+        onError: () => showError('Failed to close task'),
       });
     }
   }, [orderedTasks, closeTaskMutate, updateTaskMutate]);
@@ -576,9 +585,9 @@ export default function TasksPage() {
     updateTaskMutate({ id, data: { title: newTitle } }, {
       onSuccess: () => {
         setEditingTaskId(null);
-        toast.success('Title updated');
+        showSuccess('Title updated');
       },
-      onError: () => toast.error('Failed to update title'),
+      onError: () => showError('Failed to update title'),
     });
   }, [updateTaskMutate]);
 
@@ -688,14 +697,18 @@ export default function TasksPage() {
           )}
         </div>
 
-        {/* Status tabs + View settings row */}
-        <div className="flex items-center justify-between px-3 border-b border-border">
-          <StatusTabs activeTab={activeStatusTab} onTabChange={handleStatusTabChange} />
-          <ViewSettingsButton groupBy={groupBy} onGroupByChange={setGroupBy} />
-        </div>
+        {/* Status tabs + View settings row — hidden when no tasks exist at all (onboarding state) */}
+        {(isPending || hasAnyTasks) && (
+          <>
+            <div className="flex items-center justify-between px-3 border-b border-border">
+              <StatusTabs activeTab={activeStatusTab} onTabChange={handleStatusTabChange} />
+              <ViewSettingsButton groupBy={groupBy} onGroupByChange={setGroupBy} />
+            </div>
 
-        {/* Filter chips (priority, tags) */}
-        <FilterBar filters={filters} onChange={handleFiltersChange} onClearAll={clearSearch} />
+            {/* Filter chips (priority, tags) */}
+            <FilterBar filters={filters} onChange={handleFiltersChange} onClearAll={clearSearch} />
+          </>
+        )}
 
         {/* Needs Attention section */}
         {attentionTasks.length > 0 && (
@@ -737,9 +750,14 @@ export default function TasksPage() {
               icon={ListTodo}
               heading="Your task list is empty"
               description="Ask your AI agent to get started — copy a prompt below and paste it into your chat"
-              action={{ label: 'Connect an agent →', href: '/settings' }}
             >
-              <div className="flex flex-col gap-2 w-full items-center">
+              <Link
+                href="/connections"
+                className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-opacity hover:opacity-85 active:opacity-75 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 [background-image:linear-gradient(135deg,#7c3aed,#3b82f6)]"
+              >
+                Connect an agent
+              </Link>
+              <div className="flex flex-col gap-2 w-full items-center mt-2">
                 {ONBOARDING_PROMPTS.map((prompt) => (
                   <CopyablePromptBlock key={prompt} prompt={prompt} />
                 ))}

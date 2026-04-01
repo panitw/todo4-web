@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Plus, Search } from 'lucide-react';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { CommandPalette } from '@/components/command-palette';
+import { OfflineBanner } from '@/components/shared/offline-banner';
 import { useSearch } from '@/providers/search-provider';
 import { useCreateTaskAction } from '@/providers/create-task-provider';
 
@@ -85,6 +86,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Main content — with bottom padding on mobile for tab bar */}
         <main ref={mainRef} className="flex-1 overflow-y-auto">
+          {/* Offline banner — subtle, non-blocking */}
+          <OfflineBanner />
           <div className="mx-auto max-w-[960px] h-full px-4 md:px-8 pb-14 md:pb-0">
             {/* Desktop top bar — inside 960px content area (IG-2) */}
             <header className="hidden md:flex items-center gap-4 py-3 border-b border-border">
@@ -123,12 +126,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </button>
               )}
               <button type="button" aria-label="Notifications" className="relative text-muted-foreground">
-                <Bell size={20} />
+                <Bell size={20} aria-hidden="true" />
                 <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground">
                   0
                 </span>
               </button>
-              <div className="h-8 w-8 rounded-full bg-muted" aria-label="User avatar" />
+              <div className="h-8 w-8 rounded-full bg-muted" aria-hidden="true" />
             </header>
 
             {children}
@@ -136,18 +139,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
 
         {/* Command palette (desktop only — triggered by Cmd+K) */}
-        <div className="hidden md:block">
+        <aside className="hidden md:block" aria-label="Command palette">
           <CommandPalette
             open={commandPaletteOpen}
             onOpenChange={setCommandPaletteOpen}
             onSelectTask={handleCommandSelectTask}
           />
-        </div>
+        </aside>
 
         {/* Mobile bottom tab bar — visible below md */}
-        <div className="md:hidden fixed bottom-0 inset-x-0 z-50">
+        <footer className="md:hidden fixed bottom-0 inset-x-0 z-50">
           <BottomTabBar />
-        </div>
+        </footer>
       </div>
     </div>
   );

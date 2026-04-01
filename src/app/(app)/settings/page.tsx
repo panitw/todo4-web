@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { showError, showSuccess, showInfo } from '@/lib/toast';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,13 +97,13 @@ function ProfileSection({ profile }: { profile: UserProfile | undefined }) {
       setEmail(updated.email);
       setErrors({});
       if (updated.pendingEmail) {
-        toast.info(`Verify your new email at ${updated.pendingEmail} to complete the change`);
+        showInfo(`Verify your new email at ${updated.pendingEmail} to complete the change`);
       } else {
-        toast.success('Profile updated');
+        showSuccess('Profile updated');
       }
     },
     onError: (err: ApiError) => {
-      toast.error(err.message ?? 'Failed to update profile');
+      showError(err.message ?? 'Failed to update profile');
     },
   });
 
@@ -200,13 +200,13 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
     mutationFn: (provider: string) => disconnectOAuthProvider(provider),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['oauth-providers'] });
-      toast.success('Provider disconnected');
+      showSuccess('Provider disconnected');
     },
     onError: (err: ApiError) => {
       if (err.code === 'cannot_disconnect_oauth') {
-        toast.error('Set a verified password before disconnecting this provider');
+        showError('Set a verified password before disconnecting this provider');
       } else {
-        toast.error(err.message ?? 'Failed to disconnect provider');
+        showError(err.message ?? 'Failed to disconnect provider');
       }
     },
   });
@@ -222,13 +222,13 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
       if (currentPasswordRef.current) currentPasswordRef.current.value = '';
       if (newPasswordRef.current) newPasswordRef.current.value = '';
       setPwdErrors({});
-      toast.success('Password changed successfully');
+      showSuccess('Password changed successfully');
     },
     onError: (err: ApiError) => {
       if (err.code === 'invalid_current_password') {
         setPwdErrors({ currentPassword: 'Current password is incorrect' });
       } else {
-        toast.error(err.message ?? 'Failed to change password');
+        showError(err.message ?? 'Failed to change password');
       }
     },
   });
@@ -338,14 +338,14 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
 function ExportSection() {
   const csvMutation = useMutation({
     mutationFn: exportCsv,
-    onSuccess: () => toast.success('CSV downloaded'),
-    onError: () => toast.error('Failed to download CSV'),
+    onSuccess: () => showSuccess('CSV downloaded'),
+    onError: () => showError('Failed to download CSV'),
   });
 
   const jsonMutation = useMutation({
     mutationFn: exportJson,
-    onSuccess: () => toast.success('JSON downloaded'),
-    onError: () => toast.error('Failed to download JSON'),
+    onSuccess: () => showSuccess('JSON downloaded'),
+    onError: () => showError('Failed to download JSON'),
   });
 
   return (
@@ -395,9 +395,9 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
     },
     onError: (err: ApiError) => {
       if (err.code === 'invalid_credentials') {
-        toast.error('Password verification failed. Please try again.');
+        showError('Password verification failed. Please try again.');
       } else {
-        toast.error(err.message ?? 'Failed to delete account');
+        showError(err.message ?? 'Failed to delete account');
       }
       setOpen(false);
     },
@@ -407,10 +407,10 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
     mutationFn: cancelDeletion,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['profile'] });
-      toast.success('Account deletion cancelled.');
+      showSuccess('Account deletion cancelled.');
     },
     onError: (err: ApiError) => {
-      toast.error(err.message ?? 'Failed to cancel deletion');
+      showError(err.message ?? 'Failed to cancel deletion');
     },
   });
 
@@ -487,7 +487,7 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
                     disabled={deleteAccountMutation.isPending}
                     onClick={() => {
                       if (profile?.hasPassword && !passwordRef.current?.value) {
-                        toast.error('Password is required to confirm account deletion.');
+                        showError('Password is required to confirm account deletion.');
                         return;
                       }
                       deleteAccountMutation.mutate();

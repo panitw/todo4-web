@@ -10,10 +10,10 @@ export function MobileTopBar() {
       <BrandWordmark variant="mobile" className="text-[22px]" />
       <div className="flex items-center gap-3">
         <button type="button" aria-label="Notifications" className="text-muted-foreground">
-          <Bell size={24} />
+          <Bell size={24} aria-hidden="true" />
         </button>
         <Link href="/settings" aria-label="Settings" className="text-muted-foreground">
-          <Settings size={24} />
+          <Settings size={24} aria-hidden="true" />
         </Link>
       </div>
     </header>

@@ -13,6 +13,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             staleTime: 30_000, // 30s — matches UI polling interval per architecture
             refetchOnWindowFocus: false,
           },
+          mutations: {
+            retry: 1,
+            retryDelay: 3000, // Automatic retry once after 3s for failed mutations
+          },
         },
       }),
   )

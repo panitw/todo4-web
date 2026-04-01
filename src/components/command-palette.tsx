@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
+import { showInfo } from '@/lib/toast';
 import {
   CalendarDays,
   FileDown,
@@ -124,7 +124,7 @@ export function CommandPalette({ open, onOpenChange, onSelectTask }: CommandPale
               value="Export CSV"
               onSelect={() =>
                 handleSelect(() => {
-                  toast.info('Export CSV is not yet available');
+                  showInfo('Export CSV is not yet available');
                 })
               }
             >

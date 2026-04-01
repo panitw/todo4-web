@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -286,6 +286,14 @@ function VirtualTaskList({
 }
 
 export default function TasksPage() {
+  return (
+    <Suspense>
+      <TasksPageContent />
+    </Suspense>
+  );
+}
+
+function TasksPageContent() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFilters>({
     ...DEFAULT_FILTERS,

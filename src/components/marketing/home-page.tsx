@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -10,7 +11,16 @@ export function HomePage() {
       <div className="flex flex-col items-center gap-8 text-center max-w-2xl">
         {/* Wordmark */}
         <div className="flex flex-col items-center gap-2">
-          <span className="text-5xl font-bold tracking-tight text-foreground">todo4</span>
+          <Image
+            src="/todo4-logo.png"
+            alt="todo4 logo"
+            width={320}
+            height={320}
+            className="max-w-full h-auto"
+            unoptimized
+            priority
+          />
+          <h1 className="text-5xl font-bold tracking-tight text-foreground">Todo4</h1>
           <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
             AI-native task management
           </span>
@@ -18,8 +28,8 @@ export function HomePage() {
 
         {/* Value proposition */}
         <p className="text-lg text-muted-foreground leading-relaxed">
-          Let your AI agent manage tasks while you stay in control.
-          Built for teams that move fast and trust their tools.
+          Finally, a task manager that speaks AI. Your agent plans,
+          prioritizes, and executes — so you can focus on what actually matters.
         </p>
 
         {/* CTAs */}

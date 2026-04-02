@@ -27,6 +27,12 @@ export async function register(
   });
 }
 
+export async function logout(): Promise<void> {
+  await apiFetch<{ message: string }>('/api/v1/auth/logout', {
+    method: 'POST',
+  });
+}
+
 export async function resendVerificationEmail(email: string): Promise<void> {
   await apiFetch<{ message: string }>('/api/v1/auth/resend-verification', {
     method: 'POST',

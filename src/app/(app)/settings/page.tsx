@@ -32,6 +32,7 @@ import {
   type UserProfile,
   type OAuthProvider,
 } from '@/lib/api/users';
+import { logout } from '@/lib/api/auth';
 
 type Section = 'profile' | 'security' | 'export' | 'account';
 
@@ -422,6 +423,31 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
           Manage your account settings.
         </p>
       </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium">Log out</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Sign out of your account on this device.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            logout()
+              .catch(() => {})
+              .finally(() => {
+                queryClient.clear();
+                router.push('/login');
+              });
+          }}
+        >
+          Log out
+        </Button>
+      </div>
+
+      <Separator />
 
       <div className="border border-destructive/50 rounded-lg p-4 space-y-4">
         <div>

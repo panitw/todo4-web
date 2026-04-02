@@ -285,9 +285,23 @@ function VirtualTaskList({
   );
 }
 
+function TasksPageFallback() {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto space-y-2 px-2 pt-6 pb-2">
+        <TaskCardSkeleton />
+        <TaskCardSkeleton />
+        <TaskCardSkeleton />
+        <TaskCardSkeleton />
+        <TaskCardSkeleton />
+      </div>
+    </div>
+  );
+}
+
 export default function TasksPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<TasksPageFallback />}>
       <TasksPageContent />
     </Suspense>
   );

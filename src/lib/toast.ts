@@ -8,7 +8,7 @@ import { toast, type ExternalToast } from 'sonner';
  * - Warning (quota): 8s
  */
 export function showError(message: string, opts?: ExternalToast) {
-  return toast.error(message, { duration: Infinity, ...opts });
+  return toast.error(message, { ...opts, duration: Infinity });
 }
 
 export function showSuccess(message: string, opts?: ExternalToast) {
@@ -20,5 +20,5 @@ export function showInfo(message: string, opts?: ExternalToast) {
 }
 
 export function showWarning(message: string, opts?: ExternalToast) {
-  return toast.warning(message, { duration: 8000, ...opts });
+  return toast.warning(message, { ...opts, duration: 8000 });
 }

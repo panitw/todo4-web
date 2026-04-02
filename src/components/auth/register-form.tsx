@@ -83,7 +83,7 @@ export function RegisterForm() {
         </button>
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-3 rounded-lg bg-[#1877F2] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#166FE5]"
+          className="flex w-full items-center justify-center gap-3 rounded-lg bg-[#1264CC] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0E53AA]"
           onClick={() => {
             window.location.href = '/api/v1/auth/facebook';
           }}

@@ -32,18 +32,13 @@ export function HomePage() {
           prioritizes, and executes — so you can focus on what actually matters.
         </p>
 
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-          <Link
-            href="/login"
-            className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'sm:min-w-36')}
-          >
-            Log in
-          </Link>
-          <Link href="/register" className={cn(buttonVariants({ size: 'lg' }), 'sm:min-w-36')}>
-            Get Started
-          </Link>
-        </div>
+        {/* CTA */}
+        <Link
+          href="/login"
+          className={cn(buttonVariants({ variant: 'gradient', size: 'lg' }), 'sm:min-w-48')}
+        >
+          Get Started
+        </Link>
       </div>
     </main>
   );

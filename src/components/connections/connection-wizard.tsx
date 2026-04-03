@@ -11,7 +11,11 @@ type WizardStep = 1 | 2 | 3
 const ALL_PLATFORMS: Platform[] = ['claude', 'chatgpt', 'gemini', 'openclaw']
 const DISABLED_PLATFORMS = new Set<Platform>(['gemini'])
 
-export function ConnectionWizard() {
+interface ConnectionWizardProps {
+  onDone?: () => void
+}
+
+export function ConnectionWizard({ onDone }: ConnectionWizardProps) {
   const [step, setStep] = useState<WizardStep>(1)
   const [platform, setPlatform] = useState<Platform | null>(null)
   const stepContentRef = useRef<HTMLDivElement>(null)
@@ -78,6 +82,7 @@ export function ConnectionWizard() {
           <VerifyStep
             platform={platform}
             onBack={() => goToStep(2)}
+            onDone={onDone}
           />
         )}
       </div>

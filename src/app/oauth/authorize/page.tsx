@@ -51,24 +51,25 @@ export default async function OAuthAuthorizePage(props: {
       );
     }
 
-    const params = new URLSearchParams({
-      client_id,
-      redirect_uri,
-      scope,
-      state,
-      code_challenge,
-      code_challenge_method,
-    });
-
-    const fetchUrl = `${apiUrl()}/oauth/authorize?${params.toString()}`;
+    // Call the API to validate params and get the HMAC signature
+    const validateUrl = `${apiUrl()}/oauth/authorize/validate`;
     let res: Response;
     try {
-      res = await fetch(fetchUrl, {
-        redirect: 'manual',
+      res = await fetch(validateUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id,
+          redirect_uri,
+          scope,
+          state,
+          code_challenge,
+          code_challenge_method,
+        }),
         cache: 'no-store',
       });
     } catch (err) {
-      console.error('[oauth/authorize] fetch failed:', fetchUrl, err);
+      console.error('[oauth/authorize] fetch failed:', validateUrl, err);
       return (
         <main className="flex min-h-screen items-center justify-center px-4 py-12">
           <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm text-center">
@@ -79,36 +80,24 @@ export default async function OAuthAuthorizePage(props: {
       );
     }
 
-    // With redirect:'manual', redirects come back as status 302 (Node) or 0/opaqueredirect (browser)
-    const location = res.headers.get('location');
-    if ((res.status >= 300 && res.status < 400) || res.type === 'opaqueredirect') {
-      if (location) {
-        // Extract params_sig from the redirect URL
-        try {
-          const redirectUrl = new URL(location);
-          const sigFromApi = redirectUrl.searchParams.get('params_sig');
-          if (sigFromApi) {
-            params.set('params_sig', sigFromApi);
-            redirect(`/oauth/authorize?${params.toString()}`);
-          }
-        } catch {
-          console.error('[oauth/authorize] Failed to parse redirect URL:', location);
-        }
-      }
+    const body = await res.json() as { params_sig?: string; error?: { message?: string }; message?: string };
+
+    if (res.ok && body.params_sig) {
+      const params = new URLSearchParams({
+        client_id,
+        redirect_uri,
+        scope,
+        state,
+        code_challenge,
+        code_challenge_method,
+        params_sig: body.params_sig,
+      });
+      redirect(`/oauth/authorize?${params.toString()}`);
     }
 
-    // If todo-api returned an error, show it
-    const errorBody = await res.text();
-    console.error('[oauth/authorize] API error:', res.status, errorBody);
-    let errorMessage = 'Authorization request failed.';
-    try {
-      const parsed = JSON.parse(errorBody) as { message?: string; error?: { message?: string } };
-      // NestJS wraps errors in {error: {message: "..."}}
-      if (parsed.error?.message) errorMessage = parsed.error.message;
-      else if (parsed.message) errorMessage = parsed.message;
-    } catch {
-      // ignore parse errors
-    }
+    // Validation failed — show error
+    const errorMessage = body.error?.message || body.message || 'Authorization request failed.';
+    console.error('[oauth/authorize] API error:', res.status, JSON.stringify(body));
 
     return (
       <main className="flex min-h-screen items-center justify-center px-4 py-12">

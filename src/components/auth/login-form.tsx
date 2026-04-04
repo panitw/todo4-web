@@ -76,6 +76,8 @@ export function LoginForm() {
           type="button"
           className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:border-input dark:bg-input/30 dark:text-foreground dark:hover:bg-input/50"
           onClick={() => {
+            const next = searchParams.get('next');
+            if (next) document.cookie = `oauth_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
             window.location.href = '/api/v1/auth/google';
           }}
         >
@@ -91,6 +93,8 @@ export function LoginForm() {
           type="button"
           className="flex w-full items-center justify-center gap-3 rounded-lg bg-[#1264CC] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#0E53AA]"
           onClick={() => {
+            const next = searchParams.get('next');
+            if (next) document.cookie = `oauth_next=${encodeURIComponent(next)}; path=/; max-age=600; SameSite=Lax`;
             window.location.href = '/api/v1/auth/facebook';
           }}
         >

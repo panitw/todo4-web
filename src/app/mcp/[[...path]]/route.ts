@@ -20,15 +20,26 @@ function mcpHeaders(req: NextRequest): Record<string, string> {
 }
 
 // Forward Mcp-Session-Id from upstream response back to the client
-function responseHeaders(res: globalThis.Response): Record<string, string> {
+function responseHeaders(
+  res: globalThis.Response,
+  req?: NextRequest,
+): Record<string, string> {
   const h: Record<string, string> = {
     'Content-Type': res.headers.get('content-type') || 'text/event-stream',
   };
   const session = res.headers.get('mcp-session-id');
   if (session) h['Mcp-Session-Id'] = session;
-  // Forward WWW-Authenticate so the client can trigger RFC 9728 OAuth discovery
-  const wwwAuth = res.headers.get('www-authenticate');
-  if (wwwAuth) h['WWW-Authenticate'] = wwwAuth;
+
+  // On 401, build a WWW-Authenticate header with resource_metadata URL per RFC 9728
+  // so the MCP client knows where to discover OAuth metadata
+  if (res.status === 401 && req) {
+    const proto = req.headers.get('x-forwarded-proto') || 'https';
+    const host = req.headers.get('host') || '';
+    const resourceMetadataUrl = `${proto}://${host}/.well-known/oauth-protected-resource`;
+    h['WWW-Authenticate'] =
+      `Bearer resource_metadata="${resourceMetadataUrl}"`;
+  }
+
   return h;
 }
 
@@ -47,7 +58,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   const responseBody = await res.text();
   return new Response(responseBody, {
     status: res.status,
-    headers: responseHeaders(res),
+    headers: responseHeaders(res, req),
   });
 }
 
@@ -64,7 +75,7 @@ export async function GET(req: NextRequest): Promise<Response> {
   const responseBody = await res.text();
   return new Response(responseBody, {
     status: res.status,
-    headers: responseHeaders(res),
+    headers: responseHeaders(res, req),
   });
 }
 
@@ -81,7 +92,7 @@ export async function DELETE(req: NextRequest): Promise<Response> {
   const responseBody = await res.text();
   return new Response(responseBody, {
     status: res.status,
-    headers: responseHeaders(res),
+    headers: responseHeaders(res, req),
   });
 }
 

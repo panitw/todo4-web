@@ -1,6 +1,7 @@
 'use client'
 
-import { Bot, MessageSquare, Shell, Sparkles } from 'lucide-react'
+import Image from 'next/image'
+import { Bot, MessageSquare, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type Platform = 'claude' | 'chatgpt' | 'gemini' | 'openclaw'
@@ -8,7 +9,8 @@ export type Platform = 'claude' | 'chatgpt' | 'gemini' | 'openclaw'
 interface PlatformInfo {
   name: string
   description: string
-  icon: React.ComponentType<{ className?: string }>
+  icon?: React.ComponentType<{ className?: string }>
+  imageSrc?: string
 }
 
 const PLATFORMS: Record<Platform, PlatformInfo> = {
@@ -30,7 +32,7 @@ const PLATFORMS: Record<Platform, PlatformInfo> = {
   openclaw: {
     name: 'OpenClaw',
     description: 'MCP via MCPorter',
-    icon: Shell,
+    imageSrc: '/openclaw.webp',
   },
 }
 
@@ -61,12 +63,23 @@ export function PlatformCard({ platform, selected, disabled, onSelect }: Platfor
       aria-pressed={disabled ? undefined : selected}
     >
       <div className={cn(
-        'flex size-12 shrink-0 items-center justify-center rounded-lg transition-colors',
-        disabled && 'bg-muted text-muted-foreground',
-        !disabled && selected && 'bg-gradient-to-br from-violet-500 to-blue-500 text-white',
-        !disabled && !selected && 'bg-muted text-muted-foreground group-hover/card:bg-violet-100 group-hover/card:text-violet-500 dark:group-hover/card:bg-violet-500/20 dark:group-hover/card:text-violet-400'
+        'flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg transition-colors',
+        info.imageSrc && 'bg-transparent',
+        !info.imageSrc && disabled && 'bg-muted text-muted-foreground',
+        !info.imageSrc && !disabled && selected && 'bg-gradient-to-br from-violet-500 to-blue-500 text-white',
+        !info.imageSrc && !disabled && !selected && 'bg-muted text-muted-foreground group-hover/card:bg-violet-100 group-hover/card:text-violet-500 dark:group-hover/card:bg-violet-500/20 dark:group-hover/card:text-violet-400'
       )}>
-        <Icon className="size-6" />
+        {info.imageSrc ? (
+          <Image
+            src={info.imageSrc}
+            alt={`${info.name} logo`}
+            width={48}
+            height={48}
+            className="size-12 object-contain"
+          />
+        ) : Icon ? (
+          <Icon className="size-6" />
+        ) : null}
       </div>
       <div>
         <div className={cn('text-sm font-medium', disabled ? 'text-muted-foreground' : selected ? 'text-foreground' : '')}>{info.name}</div>

@@ -60,30 +60,52 @@ export default async function OAuthAuthorizePage(props: {
       code_challenge_method,
     });
 
-    const res = await fetch(`${apiUrl()}/oauth/authorize?${params.toString()}`, {
-      redirect: 'manual',
-      cache: 'no-store',
-    });
+    const fetchUrl = `${apiUrl()}/oauth/authorize?${params.toString()}`;
+    let res: Response;
+    try {
+      res = await fetch(fetchUrl, {
+        redirect: 'manual',
+        cache: 'no-store',
+      });
+    } catch (err) {
+      console.error('[oauth/authorize] fetch failed:', fetchUrl, err);
+      return (
+        <main className="flex min-h-screen items-center justify-center px-4 py-12">
+          <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm text-center">
+            <h1 className="text-xl font-semibold text-foreground mb-2">Authorization Error</h1>
+            <p className="text-muted-foreground">Could not reach the authorization server.</p>
+          </div>
+        </main>
+      );
+    }
 
-    if (res.status === 302) {
-      const location = res.headers.get('location');
+    // With redirect:'manual', redirects come back as status 302 (Node) or 0/opaqueredirect (browser)
+    const location = res.headers.get('location');
+    if ((res.status >= 300 && res.status < 400) || res.type === 'opaqueredirect') {
       if (location) {
-        // Extract params_sig from the redirect URL and redirect to the same page with it
-        const redirectUrl = new URL(location);
-        const sigFromApi = redirectUrl.searchParams.get('params_sig');
-        if (sigFromApi) {
-          params.set('params_sig', sigFromApi);
-          redirect(`/oauth/authorize?${params.toString()}`);
+        // Extract params_sig from the redirect URL
+        try {
+          const redirectUrl = new URL(location);
+          const sigFromApi = redirectUrl.searchParams.get('params_sig');
+          if (sigFromApi) {
+            params.set('params_sig', sigFromApi);
+            redirect(`/oauth/authorize?${params.toString()}`);
+          }
+        } catch {
+          console.error('[oauth/authorize] Failed to parse redirect URL:', location);
         }
       }
     }
 
     // If todo-api returned an error, show it
     const errorBody = await res.text();
+    console.error('[oauth/authorize] API error:', res.status, errorBody);
     let errorMessage = 'Authorization request failed.';
     try {
-      const parsed = JSON.parse(errorBody) as { message?: string };
-      if (parsed.message) errorMessage = parsed.message;
+      const parsed = JSON.parse(errorBody) as { message?: string; error?: { message?: string } };
+      // NestJS wraps errors in {error: {message: "..."}}
+      if (parsed.error?.message) errorMessage = parsed.error.message;
+      else if (parsed.message) errorMessage = parsed.message;
     } catch {
       // ignore parse errors
     }

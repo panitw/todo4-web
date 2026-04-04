@@ -23,20 +23,21 @@ pnpm install
 
 # 3. Start the development server
 pnpm dev
-# → App available at http://localhost:3002
+# → App available at http://localhost:3001
 ```
 
-> **Port conflict:** Next.js defaults to port `3000`, which conflicts with `todo-api`. The `.env.local` file already sets `PORT=3002` — just use `pnpm dev` as-is.
+> **Port conflict:** Next.js defaults to port `3000`, which conflicts with `todo-api`. The `.env.local` file already sets `PORT=3001` — just use `pnpm dev` as-is.
 
-Visit `http://localhost:3002` in your browser to verify the app loads with no errors.
+Visit `http://localhost:3001` in your browser to verify the app loads with no errors.
 
 ## Environment Variables
 
 | Variable | Default | Required | Description |
 |---|---|---|---|
 | `API_URL` | `http://localhost:3000` | Yes | Base URL of `todo-api` — read by the Next.js server at startup (runtime, not build time) |
+| `MCP_URL` | `http://localhost:3002` | Yes | Base URL of `todo-mcp` — proxied via `/mcp` route for AI agent connections |
 | `NEXT_PUBLIC_SENTRY_DSN` | — | No | Sentry DSN for browser error monitoring |
-| `PORT` | `3000` | No | Dev server port — set to `3002` to avoid conflict with `todo-api` |
+| `PORT` | `3000` | No | Dev server port — set to `3001` to avoid conflict with `todo-api` |
 
 > **Note on `NEXT_PUBLIC_*` variables:** These are inlined into the JavaScript bundle at **build time**. Changing them requires a rebuild (`pnpm build`).
 

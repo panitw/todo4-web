@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 interface OAuthConsentFormProps {
@@ -25,82 +25,55 @@ export function OAuthConsentForm({
   clientName,
 }: OAuthConsentFormProps) {
   const [submitting, setSubmitting] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  const decisionRef = useRef<HTMLInputElement>(null);
 
-  async function handleConsent(decision: 'approve' | 'deny') {
+  function handleConsent(decision: 'approve' | 'deny') {
     setSubmitting(true);
-
-    const res = await fetch('/oauth/consent', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      redirect: 'manual',
-      body: JSON.stringify({
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        scope,
-        state,
-        code_challenge: codeChallenge,
-        code_challenge_method: codeChallengeMethod,
-        params_sig: paramsSig,
-        agent_name: clientName,
-        decision,
-      }),
-    });
-
-    // The consent endpoint returns a 302 redirect to the client's callback
-    if (res.type === 'opaqueredirect' || res.status === 302 || res.status === 0) {
-      // For opaque redirects (redirect: 'manual' in browser), we need to re-submit
-      // without manual redirect to let the browser follow it
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = '/oauth/consent';
-
-      const fields: Record<string, string> = {
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        scope,
-        state,
-        code_challenge: codeChallenge,
-        code_challenge_method: codeChallengeMethod,
-        params_sig: paramsSig,
-        agent_name: clientName,
-        decision,
-      };
-
-      for (const [key, value] of Object.entries(fields)) {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      }
-
-      document.body.appendChild(form);
-      form.submit();
-      return;
+    if (decisionRef.current) {
+      decisionRef.current.value = decision;
     }
-
-    // If we get here, something unexpected happened
-    setSubmitting(false);
+    formRef.current?.submit();
   }
 
   return (
-    <div className="flex gap-3">
-      <Button
-        variant="outline"
-        className="flex-1"
-        disabled={submitting}
-        onClick={() => handleConsent('deny')}
-      >
-        Deny
-      </Button>
-      <Button
-        className="flex-1"
-        disabled={submitting}
-        onClick={() => handleConsent('approve')}
-      >
-        {submitting ? 'Authorizing...' : 'Approve'}
-      </Button>
-    </div>
+    <form ref={formRef} method="POST" action="/oauth/consent">
+      <input type="hidden" name="client_id" value={clientId} />
+      <input type="hidden" name="redirect_uri" value={redirectUri} />
+      <input type="hidden" name="scope" value={scope} />
+      <input type="hidden" name="state" value={state} />
+      <input type="hidden" name="code_challenge" value={codeChallenge} />
+      <input
+        type="hidden"
+        name="code_challenge_method"
+        value={codeChallengeMethod}
+      />
+      <input type="hidden" name="params_sig" value={paramsSig} />
+      <input type="hidden" name="agent_name" value={clientName} />
+      <input type="hidden" name="decision" ref={decisionRef} value="approve" />
+
+      <div className="flex gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="flex-1"
+          disabled={submitting}
+          onClick={() => handleConsent('deny')}
+        >
+          Deny
+        </Button>
+        <Button
+          type="button"
+          variant="gradient"
+          size="lg"
+          className="flex-1"
+          disabled={submitting}
+          onClick={() => handleConsent('approve')}
+        >
+          {submitting ? 'Authorizing...' : 'Approve'}
+        </Button>
+      </div>
+    </form>
   );
 }

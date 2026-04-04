@@ -80,13 +80,14 @@ export default async function OAuthAuthorizePage(props: {
       );
     }
 
-    const body = await res.json() as { params_sig?: string; error?: { message?: string }; message?: string };
+    const body = await res.json() as { params_sig?: string; scope?: string; error?: { message?: string }; message?: string };
 
     if (res.ok && body.params_sig) {
+      const resolvedScope = body.scope || scope || 'full-access';
       const params = new URLSearchParams({
         client_id,
         redirect_uri,
-        scope,
+        scope: resolvedScope,
         state,
         code_challenge,
         code_challenge_method,

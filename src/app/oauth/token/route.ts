@@ -20,6 +20,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     jsonBody = await req.text();
   }
 
+  console.log('[oauth/token] Content-Type:', contentType);
+  console.log('[oauth/token] Forwarding body:', jsonBody);
+
   const res = await fetch(target, {
     method: 'POST',
     headers: {
@@ -31,6 +34,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   });
 
   const responseBody = await res.text();
+  console.log('[oauth/token] API response:', res.status, responseBody);
+
   return new NextResponse(responseBody, {
     status: res.status,
     headers: {

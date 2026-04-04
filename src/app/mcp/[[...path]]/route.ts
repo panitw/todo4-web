@@ -26,6 +26,9 @@ function responseHeaders(res: globalThis.Response): Record<string, string> {
   };
   const session = res.headers.get('mcp-session-id');
   if (session) h['Mcp-Session-Id'] = session;
+  // Forward WWW-Authenticate so the client can trigger RFC 9728 OAuth discovery
+  const wwwAuth = res.headers.get('www-authenticate');
+  if (wwwAuth) h['WWW-Authenticate'] = wwwAuth;
   return h;
 }
 

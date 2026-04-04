@@ -43,6 +43,15 @@ function responseHeaders(
   return h;
 }
 
+/**
+ * Determine if the upstream response is a streaming SSE response that must
+ * be piped through rather than buffered.
+ */
+function isStreamingResponse(res: globalThis.Response): boolean {
+  const ct = res.headers.get('content-type') || '';
+  return ct.includes('text/event-stream');
+}
+
 export async function POST(req: NextRequest): Promise<Response> {
   const { pathname } = req.nextUrl;
   const target = `${mcpUrl()}${pathname}`;
@@ -54,6 +63,15 @@ export async function POST(req: NextRequest): Promise<Response> {
     body,
     cache: 'no-store',
   });
+
+  // SSE streams (text/event-stream) must be piped through, not buffered.
+  // Buffering with res.text() causes BodyTimeoutError on long-lived streams.
+  if (isStreamingResponse(res) && res.body) {
+    return new Response(res.body, {
+      status: res.status,
+      headers: responseHeaders(res, req),
+    });
+  }
 
   const responseBody = await res.text();
   return new Response(responseBody, {
@@ -71,6 +89,15 @@ export async function GET(req: NextRequest): Promise<Response> {
     headers: mcpHeaders(req),
     cache: 'no-store',
   });
+
+  // GET on /mcp with a session ID returns an SSE stream for server notifications.
+  // Must be piped through, not buffered.
+  if (isStreamingResponse(res) && res.body) {
+    return new Response(res.body, {
+      status: res.status,
+      headers: responseHeaders(res, req),
+    });
+  }
 
   const responseBody = await res.text();
   return new Response(responseBody, {

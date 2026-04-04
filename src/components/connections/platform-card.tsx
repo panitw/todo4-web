@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Bot, MessageSquare, Sparkles } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type Platform = 'claude' | 'chatgpt' | 'gemini' | 'openclaw'
@@ -17,12 +17,12 @@ const PLATFORMS: Record<Platform, PlatformInfo> = {
   claude: {
     name: 'Claude',
     description: 'MCP via Connectors',
-    icon: Bot,
+    imageSrc: '/claude.svg',
   },
   chatgpt: {
     name: 'ChatGPT',
     description: 'MCP via Apps & Connectors',
-    icon: MessageSquare,
+    imageSrc: '/chatgpt.png',
   },
   gemini: {
     name: 'Gemini',

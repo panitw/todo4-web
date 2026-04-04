@@ -33,6 +33,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Run on all routes except static files, Next.js internals, and backend proxy routes
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/v1|mcp|\\.well-known|.*\\.(?:jpg|jpeg|png|gif|svg|webp|ico)$).*)'],
-  // Note: 'mcp' and '.well-known' are excluded so agent/OAuth requests aren't redirected to /login
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/v1|mcp|oauth|\\.well-known|.*\\.(?:jpg|jpeg|png|gif|svg|webp|ico)$).*)'],
+  // Note: 'mcp', 'oauth', and '.well-known' are excluded so agent/OAuth requests aren't redirected to /login
+  // The /oauth/authorize page handles its own auth check (redirects to login if no cookie)
 };

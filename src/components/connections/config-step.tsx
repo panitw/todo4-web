@@ -30,10 +30,11 @@ const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
     copyValue: MCP_URL,
     copyLabel: 'MCP Server URL',
     steps: [
-      { text: 'Open Claude Desktop \u2192 Settings \u2192 Connectors' },
-      { text: 'Click "Add Connector"' },
-      { text: 'Paste the URL above and click "Add"' },
-      { text: 'Authorize todo4 when your browser opens' },
+      { text: 'Open Claude (Desktop or Web) and click the Customize icon in the sidebar' },
+      { text: 'Select "Connectors"' },
+      { text: 'Click "Add custom connector"' },
+      { text: 'Enter "Todo4" as the name and paste the URL above' },
+      { text: 'Click "Add" and authorize todo4 when your browser opens' },
     ],
   },
   chatgpt: {

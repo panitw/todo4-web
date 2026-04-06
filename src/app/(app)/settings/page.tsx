@@ -8,6 +8,7 @@ import { showError, showSuccess, showInfo } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,12 +30,23 @@ import {
   cancelDeletion,
   exportCsv,
   exportJson,
+  getNotificationPreferences,
+  updateNotificationPreferences,
+  getWebhooks,
+  createWebhook,
+  updateWebhook,
+  deleteWebhook,
+  getCalendarStatus,
+  disconnectCalendar,
   type UserProfile,
   type OAuthProvider,
+  type NotificationPreferences,
+  type WebhookItem,
+  type CalendarStatus,
 } from '@/lib/api/users';
 import { logout } from '@/lib/api/auth';
 
-type Section = 'profile' | 'security' | 'export' | 'account';
+type Section = 'profile' | 'security' | 'notifications' | 'export' | 'account';
 
 interface ApiError extends Error {
   code?: string;
@@ -54,6 +66,7 @@ function SettingsNav({
   const items: { key: Section; label: string }[] = [
     { key: 'profile', label: 'Profile' },
     { key: 'security', label: 'Security' },
+    { key: 'notifications', label: 'Notifications' },
     { key: 'export', label: 'Export data' },
     { key: 'account', label: 'Account' },
   ];
@@ -333,6 +346,348 @@ function SecuritySection({ profile }: { profile: UserProfile | undefined }) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Notifications section
+// ──────────────────────────────────────────────────────────────────────────────
+
+const PREF_LABELS: { key: keyof NotificationPreferences; label: string; description: string }[] = [
+  { key: 'agentTaskCreated', label: 'Agent creates a task', description: 'Email when an agent creates a new task' },
+  { key: 'agentTaskUpdated', label: 'Agent updates a task', description: 'Email when an agent modifies a task' },
+  { key: 'agentTaskClosed', label: 'Agent closes a task', description: 'Email when an agent closes a task' },
+  { key: 'agentDeletionRequest', label: 'Agent requests deletion', description: 'Email when an agent requests task deletion' },
+  { key: 'overdueTaskNudge', label: 'Overdue task nudge', description: 'One-time email the morning after a task is overdue' },
+  { key: 'weeklySummary', label: 'Weekly summary', description: 'Weekly email with task completion stats' },
+];
+
+function maskUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    const host = u.hostname;
+    if (host.length <= 8) return url;
+    return `${u.protocol}//${host.slice(0, 4)}${'••••'}${host.slice(-4)}${u.pathname}`;
+  } catch {
+    return url.length > 20 ? `${url.slice(0, 10)}••••${url.slice(-6)}` : url;
+  }
+}
+
+function NotificationsSection() {
+  const queryClient = useQueryClient();
+
+  // ── Notification preferences ──
+  const { data: prefs } = useQuery<NotificationPreferences>({
+    queryKey: ['notification-preferences'],
+    queryFn: getNotificationPreferences,
+  });
+
+  const prefsMutation = useMutation({
+    mutationFn: updateNotificationPreferences,
+    onMutate: async (newPrefs) => {
+      await queryClient.cancelQueries({ queryKey: ['notification-preferences'] });
+      const previous = queryClient.getQueryData<NotificationPreferences>(['notification-preferences']);
+      queryClient.setQueryData<NotificationPreferences>(['notification-preferences'], (old) =>
+        old ? { ...old, ...newPrefs } : old,
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(['notification-preferences'], context.previous);
+      }
+      showError('Failed to update preference');
+    },
+    onSuccess: () => showSuccess('Preference updated'),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
+    },
+  });
+
+  // ── Webhooks ──
+  const { data: webhooks = [] } = useQuery<WebhookItem[]>({
+    queryKey: ['webhooks'],
+    queryFn: getWebhooks,
+  });
+
+  const [webhookFormOpen, setWebhookFormOpen] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState<WebhookItem | null>(null);
+  const webhookUrlRef = useRef<HTMLInputElement>(null);
+  const webhookSecretRef = useRef<HTMLInputElement>(null);
+
+  const createWebhookMutation = useMutation({
+    mutationFn: ({ url, secret }: { url: string; secret?: string }) => createWebhook(url, secret),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      setWebhookFormOpen(false);
+      showSuccess('Webhook configured');
+    },
+    onError: (err: ApiError) => showError(err.message ?? 'Failed to create webhook'),
+  });
+
+  const updateWebhookMutation = useMutation({
+    mutationFn: ({ id, url, secret }: { id: string; url: string; secret?: string }) =>
+      updateWebhook(id, url, secret),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      setEditingWebhook(null);
+      showSuccess('Webhook updated');
+    },
+    onError: (err: ApiError) => showError(err.message ?? 'Failed to update webhook'),
+  });
+
+  const deleteWebhookMutation = useMutation({
+    mutationFn: deleteWebhook,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      showSuccess('Webhook deleted');
+    },
+    onError: () => showError('Failed to delete webhook'),
+  });
+
+  // ── Google Calendar ──
+  const { data: calendarStatus } = useQuery<CalendarStatus>({
+    queryKey: ['calendar-status'],
+    queryFn: getCalendarStatus,
+  });
+
+  const disconnectCalendarMutation = useMutation({
+    mutationFn: disconnectCalendar,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['calendar-status'] });
+      showSuccess('Google Calendar disconnected');
+    },
+    onError: () => showError('Failed to disconnect Google Calendar'),
+  });
+
+  function handleWebhookSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const url = webhookUrlRef.current?.value?.trim();
+    const secret = webhookSecretRef.current?.value?.trim() || undefined;
+    if (!url) return;
+
+    if (editingWebhook) {
+      updateWebhookMutation.mutate({ id: editingWebhook.id, url, secret });
+    } else {
+      createWebhookMutation.mutate({ url, secret });
+    }
+  }
+
+  return (
+    <section className="p-6 space-y-8">
+      {/* Email notification toggles */}
+      <div>
+        <h2 className="text-lg font-semibold mb-1">Email Notifications</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Choose which email notifications you receive.
+        </p>
+        <fieldset className="space-y-3 max-w-sm">
+          <legend className="sr-only">Email notification preferences</legend>
+          {PREF_LABELS.map(({ key, label, description }) => (
+            <label
+              key={key}
+              className="flex items-start gap-3 cursor-pointer group/field"
+            >
+              <Checkbox
+                checked={prefs?.[key] ?? true}
+                onCheckedChange={(checked: boolean) =>
+                  prefsMutation.mutate({ [key]: checked })
+                }
+                aria-label={label}
+                className="mt-0.5"
+              />
+              <div>
+                <span className="text-sm font-medium">{label}</span>
+                <p className="text-xs text-muted-foreground">{description}</p>
+              </div>
+            </label>
+          ))}
+        </fieldset>
+      </div>
+
+      <Separator />
+
+      {/* Webhook management */}
+      <div>
+        <h2 className="text-lg font-semibold mb-1">Webhooks</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Send task change events to an external URL.
+        </p>
+
+        {webhooks.length > 0 ? (
+          <div className="space-y-3 max-w-sm">
+            {webhooks.map((wh) =>
+              editingWebhook?.id === wh.id ? (
+                <form key={wh.id} onSubmit={handleWebhookSubmit} className="space-y-3 border rounded-md p-3">
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="edit-webhook-url">URL</label>
+                    <Input
+                      id="edit-webhook-url"
+                      ref={webhookUrlRef}
+                      defaultValue={wh.url}
+                      placeholder="https://example.com/webhook"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium" htmlFor="edit-webhook-secret">
+                      Secret <span className="text-muted-foreground font-normal">(optional)</span>
+                    </label>
+                    <Input
+                      id="edit-webhook-secret"
+                      ref={webhookSecretRef}
+                      type="password"
+                      placeholder="Leave blank to keep current"
+                      className="mt-1"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" size="sm" disabled={updateWebhookMutation.isPending}>
+                      {updateWebhookMutation.isPending ? 'Saving…' : 'Save'}
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => setEditingWebhook(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <div key={wh.id} className="flex items-center justify-between border rounded-md px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{maskUrl(wh.url)}</p>
+                    {wh.hasSecret && (
+                      <p className="text-xs text-muted-foreground">Signed with secret</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 shrink-0 ml-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingWebhook(wh)}
+                    >
+                      Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger render={<Button variant="outline" size="sm" />}>
+                        Delete
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete webhook?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Task change events will no longer be sent to this URL.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            variant="destructive"
+                            disabled={deleteWebhookMutation.isPending}
+                            onClick={() => deleteWebhookMutation.mutate(wh.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        ) : webhookFormOpen ? (
+          <form onSubmit={handleWebhookSubmit} className="space-y-3 max-w-sm">
+            <div>
+              <label className="text-sm font-medium" htmlFor="new-webhook-url">URL</label>
+              <Input
+                id="new-webhook-url"
+                ref={webhookUrlRef}
+                placeholder="https://example.com/webhook"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium" htmlFor="new-webhook-secret">
+                Secret <span className="text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <Input
+                id="new-webhook-secret"
+                ref={webhookSecretRef}
+                type="password"
+                placeholder="HMAC-SHA256 signing secret"
+                className="mt-1"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" disabled={createWebhookMutation.isPending}>
+                {createWebhookMutation.isPending ? 'Saving…' : 'Save'}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setWebhookFormOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <Button variant="outline" onClick={() => setWebhookFormOpen(true)}>
+            Configure Webhook
+          </Button>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Google Calendar */}
+      <div>
+        <h2 className="text-lg font-semibold mb-1">Google Calendar</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Sync task due dates to your Google Calendar as all-day events.
+        </p>
+
+        {calendarStatus?.connected ? (
+          <div className="flex items-center justify-between max-w-sm border rounded-md px-4 py-3">
+            <div>
+              <p className="text-sm font-medium text-green-600 dark:text-green-400">Connected</p>
+              {calendarStatus.connectedAt && (
+                <p className="text-xs text-muted-foreground">
+                  Since {new Date(calendarStatus.connectedAt).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger render={<Button variant="outline" size="sm" />}>
+                Disconnect
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Disconnect Google Calendar?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Future task due dates will no longer sync. Existing calendar events will remain.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    disabled={disconnectCalendarMutation.isPending}
+                    onClick={() => disconnectCalendarMutation.mutate()}
+                  >
+                    Disconnect
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => {
+              window.location.href = '/api/v1/users/me/calendar/connect';
+            }}
+          >
+            Connect Google Calendar
+          </Button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // Export data section
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -546,6 +901,7 @@ export default function SettingsPage() {
   function renderSection() {
     if (activeSection === 'profile') return <ProfileSection key={profile?.id} profile={profile} />;
     if (activeSection === 'security') return <SecuritySection profile={profile} />;
+    if (activeSection === 'notifications') return <NotificationsSection />;
     if (activeSection === 'export') return <ExportSection />;
     return <AccountSection profile={profile} />;
   }

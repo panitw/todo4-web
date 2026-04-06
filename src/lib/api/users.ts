@@ -32,6 +32,27 @@ export interface ChangePasswordInput {
   newPassword: string;
 }
 
+export interface NotificationPreferences {
+  agentTaskCreated: boolean;
+  agentTaskUpdated: boolean;
+  agentTaskClosed: boolean;
+  agentDeletionRequest: boolean;
+  overdueTaskNudge: boolean;
+  weeklySummary: boolean;
+}
+
+export interface WebhookItem {
+  id: string;
+  url: string;
+  hasSecret: boolean;
+  createdAt: string;
+}
+
+export interface CalendarStatus {
+  connected: boolean;
+  connectedAt: string | null;
+}
+
 export async function getProfile(): Promise<UserProfile> {
   return apiFetch<UserProfile>('/api/v1/users/me');
 }
@@ -101,4 +122,98 @@ export async function exportCsv(): Promise<void> {
 
 export async function exportJson(): Promise<void> {
   return downloadBlob('/api/v1/users/me/export/json', 'todo4-export.json');
+}
+
+// ── Notification Preferences ──────────────────────────────────────────────────
+
+export async function getNotificationPreferences(): Promise<NotificationPreferences> {
+  return apiFetch<NotificationPreferences>('/api/v1/users/me/notification-preferences');
+}
+
+export async function updateNotificationPreferences(
+  data: Partial<NotificationPreferences>,
+): Promise<NotificationPreferences> {
+  return apiFetch<NotificationPreferences>('/api/v1/users/me/notification-preferences', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
+
+// ── Webhooks ──────────────────────────────────────────────────────────────────
+
+export async function getWebhooks(): Promise<WebhookItem[]> {
+  const res = await apiFetch<{ data: WebhookItem[] }>('/api/v1/webhooks');
+  return res.data;
+}
+
+export async function createWebhook(url: string, secret?: string): Promise<WebhookItem> {
+  return apiFetch<WebhookItem>('/api/v1/webhooks', {
+    method: 'POST',
+    body: JSON.stringify({ url, ...(secret ? { secret } : {}) }),
+  });
+}
+
+export async function updateWebhook(id: string, url: string, secret?: string): Promise<WebhookItem> {
+  return apiFetch<WebhookItem>(`/api/v1/webhooks/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ url, ...(secret ? { secret } : {}) }),
+  });
+}
+
+export async function deleteWebhook(id: string): Promise<void> {
+  const res = await fetch(`/api/v1/webhooks/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    let message = 'Request failed';
+    let code: string | undefined;
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string };
+      };
+      message = body.error?.message ?? message;
+      code = body.error?.code;
+    } catch {
+      // Keep default message for non-JSON or empty responses.
+    }
+
+    throw Object.assign(new Error(message), {
+      status: res.status,
+      code,
+    });
+  }
+}
+
+// ── Google Calendar ───────────────────────────────────────────────────────────
+
+export async function getCalendarStatus(): Promise<CalendarStatus> {
+  return apiFetch<CalendarStatus>('/api/v1/users/me/calendar');
+}
+
+export async function disconnectCalendar(): Promise<void> {
+  const res = await fetch('/api/v1/users/me/calendar', {
+    method: 'DELETE',
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    let message = 'Request failed';
+    let code: string | undefined;
+    try {
+      const body = (await res.json()) as {
+        error?: { code?: string; message?: string };
+      };
+      message = body.error?.message ?? message;
+      code = body.error?.code;
+    } catch {
+      // Keep default message for non-JSON or empty responses.
+    }
+
+    throw Object.assign(new Error(message), {
+      status: res.status,
+      code,
+    });
+  }
 }

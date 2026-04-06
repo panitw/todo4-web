@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { useUnreadCount } from '@/hooks/use-notifications';
 
 const NAV_ITEMS = [
   { href: '/tasks', label: 'All Tasks', icon: '☰' },
@@ -15,6 +16,8 @@ const SETTINGS_ITEM = { href: '/settings', label: 'Settings', icon: '⚙' };
 
 export function AppLeftNav() {
   const pathname = usePathname();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   return (
     <nav
@@ -44,10 +47,10 @@ export function AppLeftNav() {
             </span>
             {/* Label — hidden on md icon-only rail, visible on lg */}
             <span className="hidden lg:inline truncate">{item.label}</span>
-            {/* Needs Attention badge placeholder (grayed out, 0 count) */}
-            {item.href === '/tasks' && (
-              <span className="hidden lg:inline ml-auto text-[10px] bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 leading-none">
-                0
+            {/* Unread notification count badge */}
+            {item.href === '/notifications' && unreadCount > 0 && (
+              <span className="hidden lg:inline ml-auto text-[10px] bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none font-medium">
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </Link>

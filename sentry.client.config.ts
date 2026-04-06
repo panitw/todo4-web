@@ -44,7 +44,11 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV ?? 'development',
   release: process.env.NEXT_PUBLIC_GIT_SHA ?? undefined,
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  tracesSampleRate: parseFloat(
+    process.env.NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE ??
+      (process.env.NODE_ENV === 'production' ? '0.2' : '1.0'),
+  ),
+  tracePropagationTargets: ['localhost', /^https?:\/\/[^/]*todo4\.com/],
   debug: false,
   initialScope: {
     tags: { service: 'todo-web' },

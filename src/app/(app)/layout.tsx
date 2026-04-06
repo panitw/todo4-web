@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Plus, Search } from 'lucide-react';
+import { useUnreadCount } from '@/hooks/use-notifications';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { CommandPalette } from '@/components/command-palette';
 import { OfflineBanner } from '@/components/shared/offline-banner';
@@ -27,6 +29,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { query, setQuery, active: searchActive } = useSearch();
   const { active: createTaskActive, trigger: triggerCreateTask } = useCreateTaskAction();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   // Cmd+K / Ctrl+K to open command palette (desktop only)
   useEffect(() => {
@@ -62,6 +66,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // Page title for non-task pages
   const pageTitle = pathname.startsWith('/connections') ? 'Connections'
+    : pathname.startsWith('/notifications') ? 'Notifications'
     : pathname.startsWith('/settings') ? 'Settings'
     : '';
 
@@ -112,7 +117,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     />
                   </>
                 ) : (
-                  <span className="text-page-title font-semibold">{pageTitle}</span>
+                  <span className="text-page-title font-semibold" suppressHydrationWarning>{pageTitle}</span>
                 )}
               </div>
               {showTaskBar && createTaskActive && (
@@ -125,12 +130,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   New Task
                 </button>
               )}
-              <button type="button" aria-label="Notifications" className="relative text-muted-foreground">
+              <Link
+                href="/notifications"
+                aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : 'Notifications'}
+                onKeyDown={(e) => {
+                  if (e.key === ' ') {
+                    e.preventDefault();
+                    e.currentTarget.click();
+                  }
+                }}
+                className="relative text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md"
+              >
                 <Bell size={20} aria-hidden="true" />
-                <span className="absolute -top-1 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-muted text-[10px] text-muted-foreground">
-                  0
-                </span>
-              </button>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </Link>
               <div className="h-8 w-8 rounded-full bg-muted" aria-hidden="true" />
             </header>
 

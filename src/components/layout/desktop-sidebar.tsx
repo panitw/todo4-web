@@ -2,20 +2,24 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CheckSquare, Calendar, Link as LinkIcon, Settings } from 'lucide-react';
+import { Bell, CheckSquare, Calendar, Link as LinkIcon, Settings } from 'lucide-react';
 import { BrandWordmark } from '@/components/shared/brand-wordmark';
+import { useUnreadCount } from '@/hooks/use-notifications';
 import { cn } from '@/lib/utils';
 
 const NAV_ITEMS = [
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
   { href: '/connections', label: 'Connections', icon: LinkIcon },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
 ] as const;
 
 const SETTINGS_ITEM = { href: '/settings', label: 'Settings', icon: Settings };
 
 export function DesktopSidebar() {
   const pathname = usePathname();
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   function isActive(href: string) {
     return pathname === href || pathname?.startsWith(href + '/');
@@ -49,7 +53,12 @@ export function DesktopSidebar() {
               )}
             >
               <item.icon size={20} />
-              <span>{item.label}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.href === '/notifications' && unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-medium rounded-full px-1.5 min-w-[18px] text-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
           );
         })}

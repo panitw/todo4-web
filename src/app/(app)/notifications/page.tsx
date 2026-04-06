@@ -178,9 +178,8 @@ export default function NotificationsPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-        <h1 className="text-lg font-semibold">Notifications</h1>
+      {/* Actions bar */}
+      <div className="flex items-center justify-end px-4 py-3">
         {unreadCount > 0 && (
           <button
             type="button"

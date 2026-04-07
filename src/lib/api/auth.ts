@@ -9,6 +9,10 @@ export interface RegisterResult {
   message: string;
 }
 
+export interface ConfirmEmailChangeResult {
+  redirectUrl: string;
+}
+
 export async function login(email: string, password: string): Promise<LoginResult> {
   return apiFetch<LoginResult>('/api/v1/auth/login', {
     method: 'POST',
@@ -51,5 +55,14 @@ export async function resetPassword(token: string, newPassword: string): Promise
   await apiFetch<{ message: string }>('/api/v1/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify({ token, newPassword }),
+  });
+}
+
+export async function confirmEmailChange(
+  token: string,
+): Promise<ConfirmEmailChangeResult> {
+  return apiFetch<ConfirmEmailChangeResult>('/api/v1/auth/verify-email-change/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
   });
 }

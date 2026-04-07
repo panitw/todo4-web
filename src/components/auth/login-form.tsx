@@ -65,6 +65,12 @@ export function LoginForm() {
 
   return (
     <div className="flex flex-col gap-6">
+      {searchParams.get('expired') === 'true' && (
+        <div role="status" className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+          Your session has expired — please sign in again.
+        </div>
+      )}
+
       <div className="flex flex-col gap-1 text-center">
         <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
         <p className="text-sm text-muted-foreground">Sign in to your todo4 account</p>

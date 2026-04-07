@@ -39,3 +39,10 @@ export async function resendVerificationEmail(email: string): Promise<void> {
     body: JSON.stringify({ email }),
   });
 }
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  await apiFetch<{ message: string }>('/api/v1/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
+}

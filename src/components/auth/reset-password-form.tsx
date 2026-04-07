@@ -119,7 +119,7 @@ export function ResetPasswordForm() {
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" variant="gradient" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Resetting password\u2026' : 'Reset password'}
         </Button>
       </form>

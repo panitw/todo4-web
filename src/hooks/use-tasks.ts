@@ -29,7 +29,7 @@ export function useTasks(filters?: TaskFilters) {
         dueAfter: filters?.dueAfter,
         dueBefore: filters?.dueBefore,
       }),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     staleTime: 5_000,
   });
 }

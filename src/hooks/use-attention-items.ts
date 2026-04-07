@@ -6,7 +6,7 @@ import { listTasks, type Task, type TaskListMeta } from '@/lib/api/tasks';
  * - pending_deletion (confirmation gates)
  * - waiting_for_human (agent questions)
  *
- * Polls every 30 seconds to surface new attention items promptly.
+ * Polls every 60 seconds as a safety net when SSE updates are unavailable.
  */
 export function useAttentionItems() {
   return useQuery<{ data: Task[]; meta: TaskListMeta }>({
@@ -16,7 +16,7 @@ export function useAttentionItems() {
         status: 'pending_deletion,waiting_for_human',
         limit: 50,
       }),
-    refetchInterval: 30_000,
+    refetchInterval: 60_000,
     staleTime: 5_000,
   });
 }

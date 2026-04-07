@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Plus, Search } from 'lucide-react';
 import { useUnreadCount } from '@/hooks/use-notifications';
+import { useTaskEvents } from '@/hooks/use-task-events';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { CommandPalette } from '@/components/command-palette';
 import { OfflineBanner } from '@/components/shared/offline-banner';
@@ -29,6 +30,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { query, setQuery, active: searchActive } = useSearch();
   const { active: createTaskActive, trigger: triggerCreateTask } = useCreateTaskAction();
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  useTaskEvents();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
 

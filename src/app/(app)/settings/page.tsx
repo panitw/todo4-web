@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { Suspense, useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { showError, showSuccess, showInfo } from '@/lib/toast';
@@ -890,23 +890,28 @@ function AccountSection({ profile }: { profile: UserProfile | undefined }) {
 // Settings page
 // ──────────────────────────────────────────────────────────────────────────────
 
-export default function SettingsPage() {
+/** Detects ?email_changed=true from the email-change verification redirect. */
+function EmailChangedToast() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeSection, setActiveSection] = useState<Section>('profile');
 
-  const { data: profile } = useQuery<UserProfile>({
-    queryKey: ['profile'],
-    queryFn: getProfile,
-  });
-
-  // Show toast when redirected from email-change verification
   useEffect(() => {
     if (searchParams.get('email_changed') === 'true') {
       showSuccess('Email address updated successfully');
       router.replace('/settings', { scroll: false });
     }
   }, [searchParams, router]);
+
+  return null;
+}
+
+export default function SettingsPage() {
+  const [activeSection, setActiveSection] = useState<Section>('profile');
+
+  const { data: profile } = useQuery<UserProfile>({
+    queryKey: ['profile'],
+    queryFn: getProfile,
+  });
 
   function renderSection() {
     if (activeSection === 'profile') return <ProfileSection key={profile?.id} profile={profile} />;
@@ -918,6 +923,9 @@ export default function SettingsPage() {
 
   return (
     <div className="flex h-full">
+      <Suspense>
+        <EmailChangedToast />
+      </Suspense>
       <aside className="hidden md:block w-56 shrink-0 border-r border-border">
         <SettingsNav active={activeSection} onChange={setActiveSection} />
       </aside>

@@ -5,13 +5,16 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Plus, Search } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useUnreadCount } from '@/hooks/use-notifications';
 import { useTaskEvents } from '@/hooks/use-task-events';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
+import { UserMenu } from '@/components/layout/user-menu';
 import { CommandPalette } from '@/components/command-palette';
 import { OfflineBanner } from '@/components/shared/offline-banner';
 import { useSearch } from '@/providers/search-provider';
 import { useCreateTaskAction } from '@/providers/create-task-provider';
+import { getProfile } from '@/lib/api/users';
 
 const DesktopSidebar = dynamic(
   () => import('@/components/layout/desktop-sidebar').then((m) => m.DesktopSidebar),
@@ -33,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useTaskEvents();
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile });
 
   // Cmd+K / Ctrl+K to open command palette (desktop only)
   useEffect(() => {
@@ -148,7 +152,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
                 )}
               </Link>
-              <div className="h-8 w-8 rounded-full bg-muted" aria-hidden="true" />
+              {profile && (
+                <UserMenu
+                  name={profile.name}
+                  email={profile.email}
+                  profilePictureUrl={profile.profilePictureUrl}
+                />
+              )}
             </header>
 
             {children}

@@ -1,13 +1,17 @@
 'use client';
 
-import { Bell, Settings } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { BrandWordmark } from '@/components/shared/brand-wordmark';
 import { useUnreadCount } from '@/hooks/use-notifications';
+import { UserMenu } from '@/components/layout/user-menu';
+import { getProfile } from '@/lib/api/users';
 
 export function MobileTopBar() {
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
+  const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile });
 
   return (
     <header className="flex items-center justify-between px-4 py-2">
@@ -29,9 +33,14 @@ export function MobileTopBar() {
             <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500" />
           )}
         </Link>
-        <Link href="/settings" aria-label="Settings" className="text-muted-foreground">
-          <Settings size={24} aria-hidden="true" />
-        </Link>
+        {profile && (
+          <UserMenu
+            name={profile.name}
+            email={profile.email}
+            profilePictureUrl={profile.profilePictureUrl}
+            size="sm"
+          />
+        )}
       </div>
     </header>
   );

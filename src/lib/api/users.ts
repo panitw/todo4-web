@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string | null;
+  profilePictureUrl: string | null;
   timezone: string;
   emailVerified: boolean;
   hasPassword: boolean;

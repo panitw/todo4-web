@@ -99,9 +99,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <main ref={mainRef} className="flex-1 overflow-y-auto">
           {/* Offline banner — subtle, non-blocking */}
           <OfflineBanner />
-          <div className="mx-auto max-w-[960px] h-full px-4 md:px-8 pb-14 md:pb-0">
+          <div className="mx-auto flex max-w-[960px] h-full flex-col px-4 md:px-8 pb-14 md:pb-0">
             {/* Desktop top bar — inside 960px content area (IG-2) */}
-            <header className="hidden md:flex items-center gap-4 py-3 border-b border-border">
+            <header className="hidden md:flex shrink-0 items-center gap-4 py-3 border-b border-border">
               <div className="flex-1 relative">
                 {showTaskBar ? (
                   <>
@@ -161,7 +161,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               )}
             </header>
 
-            {children}
+            <div className="flex-1 min-h-0">
+              {children}
+            </div>
           </div>
         </main>
 

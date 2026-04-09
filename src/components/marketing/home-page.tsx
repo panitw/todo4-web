@@ -45,29 +45,24 @@ export function HomePage() {
     <>
       <main className="flex min-h-screen flex-col">
         {/* Hero Section */}
-        <div className="flex flex-1 flex-col items-center justify-center px-4 py-16">
-          <div className="flex flex-col items-center gap-8 text-center max-w-2xl">
-            <div className="flex flex-col items-center gap-2">
-              <Image
-                src="/todo4-logo.png"
-                alt="Todo4 logo"
-                width={320}
-                height={320}
-                className="max-w-full h-auto"
-                unoptimized
-                priority
-              />
-              <h1 className="text-5xl font-bold tracking-tight text-foreground">Todo4</h1>
-              <span className="text-sm font-medium text-muted-foreground uppercase tracking-widest">
-                AI-native task management
-              </span>
-            </div>
-
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Finally, a task manager that speaks AI. Your agent plans, prioritises, and executes —
-              so you can focus on what actually matters.
+        <div className="px-6 pt-12 pb-8 md:px-12 md:pt-20 md:pb-12">
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
+            <Image
+              src="/todo4-logo.png"
+              alt="Todo4 logo"
+              width={240}
+              height={240}
+              className="h-56 w-56 md:h-[17rem] md:w-[17rem]"
+              unoptimized
+              priority
+            />
+            <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+              AI does the work.<br />You stay in control.
+            </h1>
+            <p className="max-w-lg text-base text-muted-foreground leading-relaxed">
+              Finally, a task manager that speaks AI. Your agent plans, prioritises, and
+              executes — so you can focus on what actually matters.
             </p>
-
             <Link
               href="/login"
               className={cn(buttonVariants({ variant: 'gradient' }), 'h-12 px-8 text-base font-semibold sm:min-w-56')}
@@ -76,6 +71,21 @@ export function HomePage() {
             </Link>
           </div>
         </div>
+
+        {/* Product Screenshots */}
+        <section aria-label="Product screenshots" className="w-full px-4 pb-8 md:pb-12">
+          <div className="mx-auto max-w-5xl">
+            <Image
+              src="/screenshot1.png"
+              alt="Todo4 app — task list with AI agent activity"
+              width={1200}
+              height={800}
+              className="mx-auto w-full max-w-4xl"
+              unoptimized
+              priority
+            />
+          </div>
+        </section>
 
 
         {/* Features Section */}

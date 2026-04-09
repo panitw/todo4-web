@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Bot, ShieldCheck, Bell, Plug } from 'lucide-react';
@@ -34,11 +35,82 @@ const features = [
   },
 ] as const;
 
+const screenshots = [
+  { src: '/screenshot1.png', alt: 'Todo4 — task list grouped by priority' },
+  { src: '/screenshot2.png', alt: 'Todo4 — task detail with description and subtasks' },
+  { src: '/screenshot3.png', alt: 'Todo4 — calendar view with scheduled tasks' },
+  { src: '/screenshot4.png', alt: 'Todo4 — agent connections and integrations' },
+] as const;
+
 const platforms = [
   { name: 'OpenClaw', logo: '/openclaw.webp' },
   { name: 'Claude', logo: '/claude.svg' },
   { name: 'ChatGPT', logo: '/chatgpt.png' },
 ] as const;
+
+function ScreenshotCarousel() {
+  const [active, setActive] = useState(0);
+
+  const next = useCallback(() => {
+    setActive((i) => (i + 1) % screenshots.length);
+  }, []);
+
+  // Auto-advance every 5 seconds, pause on hover
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (paused) return;
+    const id = setInterval(next, 3000);
+    return () => clearInterval(id);
+  }, [paused, next]);
+
+  return (
+    <section
+      aria-label="Product screenshots"
+      className="w-full px-4 pb-8 md:pb-12"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="mx-auto max-w-5xl">
+        <div className="relative overflow-hidden">
+          <div
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${active * 100}%)` }}
+          >
+            {screenshots.map((shot) => (
+              <div key={shot.src} className="w-full shrink-0 cursor-pointer px-2" onClick={next}>
+                <Image
+                  src={shot.src}
+                  alt={shot.alt}
+                  width={1200}
+                  height={800}
+                  className="mx-auto w-full max-w-4xl"
+                  unoptimized
+                  priority
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Dot indicators */}
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {screenshots.map((shot, i) => (
+            <button
+              key={shot.src}
+              type="button"
+              onClick={() => setActive(i)}
+              aria-label={`Show screenshot ${i + 1}`}
+              className={cn(
+                'h-2.5 rounded-full transition-all',
+                i === active ? 'w-8 bg-primary' : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50',
+              )}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function HomePage() {
   return (
@@ -52,7 +124,7 @@ export function HomePage() {
               alt="Todo4 logo"
               width={240}
               height={240}
-              className="h-56 w-56 md:h-[17rem] md:w-[17rem]"
+              className="h-[18rem] w-[18rem] md:h-[22rem] md:w-[22rem]"
               unoptimized
               priority
             />
@@ -72,20 +144,8 @@ export function HomePage() {
           </div>
         </div>
 
-        {/* Product Screenshots */}
-        <section aria-label="Product screenshots" className="w-full px-4 pb-8 md:pb-12">
-          <div className="mx-auto max-w-5xl">
-            <Image
-              src="/screenshot1.png"
-              alt="Todo4 app — task list with AI agent activity"
-              width={1200}
-              height={800}
-              className="mx-auto w-full max-w-4xl"
-              unoptimized
-              priority
-            />
-          </div>
-        </section>
+        {/* Product Screenshots Carousel */}
+        <ScreenshotCarousel />
 
 
         {/* Features Section */}

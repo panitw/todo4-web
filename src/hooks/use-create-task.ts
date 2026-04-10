@@ -6,9 +6,19 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: (input: CreateTaskInput) => createTask(input),
     onMutate: async (input) => {
-      await queryClient.cancelQueries({ queryKey: ['tasks'] });
+      // Only cancel and update task list queries, not attention items
+      const isTaskListQuery = (key: readonly unknown[]) =>
+        key[0] === 'tasks' && !(key[1] && typeof key[1] === 'object' && 'attention' in key[1]);
 
-      const previousTasks = queryClient.getQueriesData<{ data: Task[]; meta: TaskListMeta }>({ queryKey: ['tasks'] });
+      await queryClient.cancelQueries({
+        queryKey: ['tasks'],
+        predicate: (query) => isTaskListQuery(query.queryKey),
+      });
+
+      const previousTasks = queryClient.getQueriesData<{ data: Task[]; meta: TaskListMeta }>({
+        queryKey: ['tasks'],
+        predicate: (query) => isTaskListQuery(query.queryKey),
+      });
 
       // Optimistically insert a temporary task at the top of every task list cache
       const optimisticTask: Task = {
@@ -32,7 +42,7 @@ export function useCreateTask() {
       };
 
       queryClient.setQueriesData<{ data: Task[]; meta: TaskListMeta }>(
-        { queryKey: ['tasks'] },
+        { queryKey: ['tasks'], predicate: (query) => isTaskListQuery(query.queryKey) },
         (old) => {
           if (!old) return old;
           return {

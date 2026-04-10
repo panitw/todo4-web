@@ -220,7 +220,7 @@ function InlineEditableTitle({ task }: { task: Task }) {
 
   if (!isEditing) {
     return (
-      <h2 className="text-base font-semibold cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 leading-snug"
+      <h2 className="text-xl font-semibold cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 leading-snug"
         onClick={() => setIsEditing(true)}>{localTitle}</h2>
     );
   }
@@ -234,7 +234,7 @@ function InlineEditableTitle({ task }: { task: Task }) {
           if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
           if (e.key === 'Escape') { setLocalTitle(task.title); setIsEditing(false); setError(null); }
         }}
-        maxLength={500} className="text-base font-semibold h-auto py-0.5"
+        maxLength={500} className="text-xl font-semibold h-auto py-0.5"
         aria-label="Task title"
         aria-invalid={!!error}
         aria-describedby={error ? 'detail-title-error' : undefined}

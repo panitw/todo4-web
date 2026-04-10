@@ -23,7 +23,7 @@ export function UserMenu({ name, email, profilePictureUrl, size = 'default' }: U
       await logout();
     } finally {
       queryClient.clear();
-      router.push('/login');
+      router.push('/');
     }
   };
 

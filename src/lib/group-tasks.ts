@@ -26,9 +26,16 @@ const PRIORITY_GROUP_CONFIG: Record<string, { label: string; colorClass: string 
 };
 
 function parseDateLocal(dateStr: string): Date {
-  // Parse date-only strings as local time to avoid UTC off-by-one errors
-  const [y, m, d] = dateStr.split('-').map(Number);
-  return new Date(y, m - 1, d);
+  // Accept both YYYY-MM-DD and full ISO 8601 (e.g. "2026-04-10T00:00:00.000Z").
+  // Extract the leading YYYY-MM-DD portion and parse as local time to avoid
+  // UTC off-by-one errors.
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) {
+    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  }
+  // Fallback: let Date parse it and pull the local date components.
+  const parsed = new Date(dateStr);
+  return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
 function getDateGroupLabel(dateStr: string | null): string {

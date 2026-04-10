@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 
 export const metadata: Metadata = {
@@ -13,8 +14,8 @@ export default function TermsPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* Top bar */}
-      <header className="px-4 py-4">
-        <Link href="/" aria-label="Back to homepage">
+      <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
+        <Link href="/" aria-label="Todo4 homepage">
           <Image
             src="/todo4-logo.png"
             alt="Todo4"
@@ -23,6 +24,13 @@ export default function TermsPage() {
             className="h-8 w-auto"
             unoptimized
           />
+        </Link>
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft size={16} />
+          Back to home
         </Link>
       </header>
 

@@ -241,10 +241,10 @@ export default function PrivacyPage() {
               If you have questions about this privacy notice or how your data
               is handled, please reach out to us at{' '}
               <a
-                href="mailto:privacy@todo4.com"
+                href="mailto:privacy@todo4.io"
                 className="text-primary underline underline-offset-2 hover:text-primary/80"
               >
-                privacy@todo4.com
+                privacy@todo4.io
               </a>
               .
             </p>

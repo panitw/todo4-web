@@ -62,16 +62,16 @@ const ONBOARDING_PROMPTS = [
 // Skeleton placeholder for loading state
 function TaskCardSkeleton() {
   return (
-    <div className="rounded-lg border border-[#e2e8f0] shadow-sm p-3 md:p-4 animate-pulse">
+    <div className="animate-pulse border-b border-border p-3 md:p-4">
       <div className="flex items-center gap-2">
-        <div className="w-5 h-5 rounded bg-muted shrink-0" />
-        <div className="flex-1 h-4 rounded bg-muted" />
-        <div className="w-4 h-4 rounded bg-muted shrink-0" />
+        <div className="size-5 shrink-0 rounded bg-muted" />
+        <div className="h-4 flex-1 rounded bg-muted" />
+        <div className="size-4 shrink-0 rounded bg-muted" />
       </div>
-      <div className="flex items-center gap-2 mt-2">
-        <div className="w-12 h-4 rounded bg-muted" />
-        <div className="w-16 h-4 rounded bg-muted" />
-        <div className="w-10 h-4 rounded bg-muted" />
+      <div className="mt-2 flex items-center gap-2">
+        <div className="h-4 w-12 rounded bg-muted" />
+        <div className="h-4 w-16 rounded bg-muted" />
+        <div className="h-4 w-10 rounded bg-muted" />
       </div>
     </div>
   );
@@ -121,7 +121,7 @@ function SortableTaskCard({
       }}
       data-index={dataIndex}
       style={style}
-      className="px-1 select-none"
+      className="select-none"
       {...attributes}
       {...listeners}
       role="listitem"
@@ -174,10 +174,10 @@ function VirtualTaskList({
     getScrollElement: () => scrollRef.current,
     estimateSize: (index) => {
       const item = virtualItems[index];
-      return item.type === 'header' ? 32 : 80;
+      return item.type === 'header' ? 44 : 76;
     },
     overscan: 5,
-    gap: 8,
+    gap: 0,
     // Cache measurements by stable id so items keep their height when they
     // move between groups (e.g., assigning a due date to a no-due-date task).
     getItemKey: (index) => virtualItems[index].id,
@@ -249,7 +249,6 @@ function VirtualTaskList({
                     right: 0,
                     transform: `translate3d(0px, ${virtualRow.start}px, 0)`,
                   }}
-                  className="px-1"
                 >
                   <GroupHeader label={item.label} colorClass={item.colorClass} />
                 </li>

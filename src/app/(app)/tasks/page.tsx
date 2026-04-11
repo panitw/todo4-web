@@ -178,6 +178,9 @@ function VirtualTaskList({
     },
     overscan: 5,
     gap: 8,
+    // Cache measurements by stable id so items keep their height when they
+    // move between groups (e.g., assigning a due date to a no-due-date task).
+    getItemKey: (index) => virtualItems[index].id,
   });
 
   // Scroll focused item into view (map focusedIndex in task-only space to virtualItems index)

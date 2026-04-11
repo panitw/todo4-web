@@ -98,7 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden">
       {/* Desktop sidebar — hidden below md (768px) */}
       <aside className="hidden md:flex md:w-60 md:shrink-0 md:flex-col">
-        <DesktopSidebar />
+        <DesktopSidebar onOpenCommandPalette={() => setCommandPaletteOpen(true)} />
       </aside>
 
       {/* Content area */}

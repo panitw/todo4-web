@@ -5,6 +5,10 @@ export interface UserProfile {
   email: string;
   name: string | null;
   profilePictureUrl: string | null;
+  tosVersion: string | null;
+  privacyVersion: string | null;
+  currentTosVersion: string;
+  currentPrivacyVersion: string;
   timezone: string;
   emailVerified: boolean;
   hasPassword: boolean;
@@ -79,6 +83,16 @@ export async function changePassword(data: ChangePasswordInput): Promise<void> {
   await apiFetch<{ message: string }>('/api/v1/users/me/change-password', {
     method: 'POST',
     body: JSON.stringify(data),
+  });
+}
+
+export async function recordConsent(
+  tosVersion: string,
+  privacyVersion: string,
+): Promise<UserProfile> {
+  return apiFetch<UserProfile>('/api/v1/users/me/consent', {
+    method: 'POST',
+    body: JSON.stringify({ tosVersion, privacyVersion }),
   });
 }
 

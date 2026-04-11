@@ -40,7 +40,7 @@ export default function TermsPage() {
           Terms and Conditions
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Last updated: April 2026
+          Last updated: April 11, 2026
         </p>
 
         <div className="mt-10 space-y-10 text-base leading-relaxed text-foreground/90">
@@ -93,6 +93,26 @@ export default function TermsPage() {
               Each person may register only one account. You must be at least 13
               years old to use Todo4. You are responsible for all activity that
               occurs under your account.
+            </p>
+          </section>
+
+          {/* Subscriptions and Payment */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Subscriptions and Payment
+            </h2>
+            <p className="mt-3">
+              Todo4 is currently offered free of charge under the free-tier
+              limits described below. There are no paid subscriptions, no
+              automatic renewals, and no payment required to create or use
+              an account.
+            </p>
+            <p className="mt-3">
+              We may introduce paid plans or premium features in the
+              future. If we do, the terms of any paid plan &mdash; including
+              pricing, billing cycle, refund policy, and cancellation
+              &mdash; will be presented clearly before you sign up, and you
+              will not be charged without your explicit agreement.
             </p>
           </section>
 
@@ -213,6 +233,26 @@ export default function TermsPage() {
             </p>
           </section>
 
+          {/* Service Availability and Modifications */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Service Availability and Modifications
+            </h2>
+            <p className="mt-3">
+              We work to keep Todo4 reliable and available, but we do not
+              guarantee uninterrupted service. The platform may be
+              temporarily unavailable due to maintenance, infrastructure
+              issues, or events outside our control.
+            </p>
+            <p className="mt-3">
+              We may add, change, suspend, or remove features at any time as
+              the product evolves. For changes that materially affect how
+              you use Todo4 &mdash; such as removing a major feature or
+              changing free-tier limits &mdash; we will give reasonable
+              advance notice through the app or by email when possible.
+            </p>
+          </section>
+
           {/* Account Termination */}
           <section>
             <h2 className="text-xl font-semibold text-foreground">
@@ -254,6 +294,43 @@ export default function TermsPage() {
             </p>
           </section>
 
+          {/* Indemnification */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Indemnification
+            </h2>
+            <p className="mt-3">
+              You agree to defend, indemnify, and hold harmless Todo4 and
+              its operator from any claims, damages, losses, or expenses
+              (including reasonable legal fees) arising from your misuse of
+              the service, your violation of these terms, your violation of
+              applicable law, or your infringement of any third-party rights
+              &mdash; including claims related to content you submit or
+              actions taken by AI agents you connect to your account.
+            </p>
+          </section>
+
+          {/* Dispute Resolution */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Dispute Resolution
+            </h2>
+            <p className="mt-3">
+              These terms are governed by the laws of Thailand, without
+              regard to its conflict-of-law principles. Any dispute arising
+              out of or relating to these terms or your use of Todo4 will be
+              subject to the exclusive jurisdiction of the courts located in
+              Bangkok, Thailand.
+            </p>
+            <p className="mt-3">
+              Before filing any formal legal action, you agree to first
+              contact us in good faith to try to resolve the dispute
+              informally. We will respond within a reasonable time, and we
+              ask that you give us at least 30 days to address your concerns
+              before pursuing other remedies.
+            </p>
+          </section>
+
           {/* Changes to Terms */}
           <section>
             <h2 className="text-xl font-semibold text-foreground">
@@ -268,6 +345,42 @@ export default function TermsPage() {
               Your continued use of Todo4 after changes are made constitutes
               acceptance of the updated terms. We encourage you to review this
               page periodically.
+            </p>
+          </section>
+
+          {/* Miscellaneous */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Miscellaneous
+            </h2>
+            <p className="mt-3">
+              <strong>Entire agreement.</strong> These terms, together with
+              the Privacy Notice, make up the entire agreement between you
+              and Todo4 regarding your use of the service, and supersede any
+              prior agreements on the same subject.
+            </p>
+            <p className="mt-3">
+              <strong>Severability.</strong> If any part of these terms is
+              found by a court to be unenforceable, the remaining parts will
+              continue in full effect.
+            </p>
+            <p className="mt-3">
+              <strong>No waiver.</strong> Our failure to enforce any right
+              or provision of these terms is not a waiver of that right or
+              provision.
+            </p>
+            <p className="mt-3">
+              <strong>Force majeure.</strong> We are not responsible for any
+              failure to perform our obligations under these terms when
+              caused by events beyond our reasonable control, including
+              natural disasters, internet outages, third-party service
+              failures, or government actions.
+            </p>
+            <p className="mt-3">
+              <strong>Assignment.</strong> You may not assign or transfer
+              these terms without our written consent. We may assign these
+              terms in connection with a merger, acquisition, or sale of
+              assets, with notice to you.
             </p>
           </section>
 

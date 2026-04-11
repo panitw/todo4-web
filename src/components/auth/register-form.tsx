@@ -64,6 +64,24 @@ export function RegisterForm() {
         <p className="text-sm text-muted-foreground">Get started with todo4 for free</p>
       </div>
 
+      <p className="text-center text-xs text-muted-foreground">
+        By continuing, you agree to our{' '}
+        <Link
+          href="/terms"
+          className="text-primary underline underline-offset-2 hover:text-primary/80"
+        >
+          Terms
+        </Link>
+        {' '}and{' '}
+        <Link
+          href="/privacy"
+          className="text-primary underline underline-offset-2 hover:text-primary/80"
+        >
+          Privacy Notice
+        </Link>
+        .
+      </p>
+
       {/* OAuth buttons */}
       <div className="flex flex-col gap-2">
         <button

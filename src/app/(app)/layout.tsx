@@ -37,6 +37,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile });
+  const consentStale = !!profile
+    && profile.deletionScheduledAt === null
+    && (
+      profile.tosVersion !== profile.currentTosVersion
+      || profile.privacyVersion !== profile.currentPrivacyVersion
+    );
+  const blockChildren = !profile || consentStale;
+
+  useEffect(() => {
+    if (!profile || !consentStale) return;
+    const next = encodeURIComponent(pathname);
+    router.replace(`/welcome/terms?next=${next}`);
+  }, [consentStale, pathname, profile, router]);
 
   // Cmd+K / Ctrl+K to open command palette (desktop only)
   useEffect(() => {
@@ -162,7 +175,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </header>
 
             <div className="flex-1 min-h-0">
-              {children}
+              {blockChildren ? null : children}
             </div>
           </div>
         </main>

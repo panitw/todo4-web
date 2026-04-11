@@ -38,7 +38,7 @@ export default function PrivacyPage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-16">
         <h1 className="text-3xl font-bold tracking-tight">Privacy Notice</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Last updated: April 2026
+          Last updated: April 11, 2026
         </p>
 
         <div className="mt-10 space-y-10 text-base leading-relaxed text-foreground/90">
@@ -134,6 +134,45 @@ export default function PrivacyPage() {
             </p>
           </section>
 
+          {/* Legal Basis for Processing */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Legal Basis for Processing (GDPR)
+            </h2>
+            <p className="mt-3">
+              If you are in the European Economic Area or the United Kingdom,
+              we rely on the following legal bases under the GDPR to process
+              your personal data:
+            </p>
+            <ul className="mt-3 list-disc space-y-2 pl-6">
+              <li>
+                <strong>Performance of a contract</strong> &mdash; to create
+                and maintain your account, deliver the task management
+                service, sync your data across devices, and send essential
+                transactional emails such as email verification, password
+                resets, and account notifications.
+              </li>
+              <li>
+                <strong>Legitimate interests</strong> &mdash; to keep the
+                platform secure, prevent fraud and abuse, monitor errors and
+                performance through Sentry, and improve the reliability of
+                the service. We balance these interests against your privacy
+                rights and only process the minimum data needed.
+              </li>
+              <li>
+                <strong>Consent</strong> &mdash; for optional features that
+                you explicitly enable, such as Google Calendar sync. You can
+                withdraw consent at any time by disabling the feature in
+                Settings.
+              </li>
+              <li>
+                <strong>Legal obligation</strong> &mdash; where we are
+                required by law to process or retain certain information,
+                such as responding to lawful requests from authorities.
+              </li>
+            </ul>
+          </section>
+
           {/* Third-Party Services */}
           <section>
             <h2 className="text-xl font-semibold text-foreground">
@@ -172,6 +211,28 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
+          {/* International Data Transfers */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              International Data Transfers
+            </h2>
+            <p className="mt-3">
+              Todo4 is hosted on Railway&rsquo;s cloud infrastructure, which
+              may process and store data in the United States and other
+              regions where Railway operates. If you access Todo4 from
+              outside these regions &mdash; including from the European
+              Economic Area, the United Kingdom, or other jurisdictions
+              &mdash; your data will be transferred to and processed in
+              those locations.
+            </p>
+            <p className="mt-3">
+              Where required by applicable law, we rely on appropriate
+              safeguards for these transfers, including the European
+              Commission&rsquo;s Standard Contractual Clauses or equivalent
+              legal mechanisms put in place by our subprocessors.
+            </p>
+          </section>
+
           {/* Data Retention */}
           <section>
             <h2 className="text-xl font-semibold text-foreground">
@@ -192,6 +253,64 @@ export default function PrivacyPage() {
               data &mdash; including tasks, comments, agent connections, and
               account information &mdash; is permanently and irreversibly
               deleted.
+            </p>
+          </section>
+
+          {/* Security Measures */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Security Measures
+            </h2>
+            <p className="mt-3">
+              We take the security of your data seriously and apply
+              industry-standard protections:
+            </p>
+            <ul className="mt-3 list-disc space-y-2 pl-6">
+              <li>
+                <strong>Encryption in transit</strong> &mdash; all
+                communication between your device and Todo4 is protected by
+                HTTPS using TLS 1.2 or higher.
+              </li>
+              <li>
+                <strong>Password hashing</strong> &mdash; passwords are
+                hashed with bcrypt at a strong cost factor; we never store
+                plaintext passwords.
+              </li>
+              <li>
+                <strong>OAuth token protection</strong> &mdash; agent OAuth
+                tokens are encrypted at rest using AES-256-GCM, and we only
+                ever store hashed token references.
+              </li>
+              <li>
+                <strong>Session security</strong> &mdash; authentication
+                sessions use httpOnly cookies that cannot be read by
+                JavaScript, reducing the risk of token theft.
+              </li>
+              <li>
+                <strong>Monitoring</strong> &mdash; we monitor errors and
+                anomalous activity through Sentry to detect and respond to
+                potential incidents quickly.
+              </li>
+            </ul>
+            <p className="mt-3">
+              No system can guarantee perfect security. If we ever become
+              aware of a personal data breach that affects you, we will
+              notify you and the relevant authorities as required by
+              applicable law.
+            </p>
+          </section>
+
+          {/* Children's Privacy */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Children&rsquo;s Privacy
+            </h2>
+            <p className="mt-3">
+              Todo4 is not intended for children under the age of 13, and we
+              do not knowingly collect personal data from anyone under 13.
+              If you are a parent or guardian and believe your child has
+              provided personal data to Todo4, please contact us and we will
+              promptly delete the information.
             </p>
           </section>
 
@@ -240,6 +359,26 @@ export default function PrivacyPage() {
                 your account and all associated data from Settings at any time.
               </li>
             </ul>
+          </section>
+
+          {/* Changes to This Notice */}
+          <section>
+            <h2 className="text-xl font-semibold text-foreground">
+              Changes to This Notice
+            </h2>
+            <p className="mt-3">
+              We may update this privacy notice from time to time to reflect
+              changes in our practices, the services we offer, or applicable
+              law. The &ldquo;Last updated&rdquo; date at the top of this
+              page always reflects the most recent revision.
+            </p>
+            <p className="mt-3">
+              For material changes &mdash; such as new categories of data
+              processing or new third-party services &mdash; we will notify
+              you in advance through the app or by email, and where required
+              by law we will ask you to review and re-accept the updated
+              notice. We encourage you to review this page periodically.
+            </p>
           </section>
 
           {/* Contact */}

@@ -37,7 +37,7 @@ export function Fab({ onClick }: FabProps) {
       aria-label="Create new task"
       className={cn(
         buttonVariants({ variant: 'gradient' }),
-        'fixed bottom-[72px] right-4 z-40 size-14 rounded-full shadow-lg active:scale-95 md:hidden',
+        'fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-4 z-40 size-14 rounded-full shadow-lg active:scale-95 md:hidden',
       )}
     >
       <Plus className="size-6" />

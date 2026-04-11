@@ -29,7 +29,7 @@ export function MobileTopBar() {
 
   if (searchMode) {
     return (
-      <header className="flex items-center gap-1 bg-zinc-950 px-3 py-2">
+      <header className="flex items-center gap-1 bg-zinc-950 px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <button
           type="button"
           onClick={exitSearch}
@@ -65,7 +65,7 @@ export function MobileTopBar() {
   }
 
   return (
-    <header className="flex items-center justify-between bg-zinc-950 px-4 py-2">
+    <header className="flex items-center justify-between bg-zinc-950 px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
       <Link href="/tasks" className="flex items-center gap-2.5" aria-label="todo4 home">
         <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#FAFAF7] shadow-[0_6px_20px_-4px_rgba(139,92,246,0.55),0_0_0_1px_rgba(255,255,255,0.08)]">
           <Image

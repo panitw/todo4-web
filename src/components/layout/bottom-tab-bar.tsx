@@ -23,7 +23,7 @@ export function BottomTabBar() {
     <nav
       role="navigation"
       aria-label="Mobile navigation"
-      className="flex h-14 items-center bg-zinc-950"
+      className="flex items-stretch bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
     >
       {TAB_ITEMS.map((item) => {
         const active = isActive(item.href);
@@ -33,7 +33,7 @@ export function BottomTabBar() {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'group/tab relative flex flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-colors',
+              'group/tab relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-colors',
               active ? 'text-white' : 'text-zinc-400 hover:text-white',
             )}
           >

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { register } from '@/lib/api/auth';
@@ -60,16 +59,6 @@ export function RegisterForm() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <Link
-          href="/login"
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to sign in
-        </Link>
-      </div>
-
       <div className="flex flex-col gap-1 text-center">
         <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
         <p className="text-sm text-muted-foreground">Get started with todo4 for free</p>
@@ -146,7 +135,7 @@ export function RegisterForm() {
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" variant="gradient" className="w-full" disabled={isSubmitting}>
           {isSubmitting ? 'Creating account…' : 'Create account'}
         </Button>
       </form>

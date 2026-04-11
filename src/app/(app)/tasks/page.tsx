@@ -310,14 +310,25 @@ export default function TasksPage() {
   );
 }
 
+const VALID_GROUP_BY_OPTIONS: readonly GroupByOption[] = ['none', 'tag', 'date', 'priority'];
+
+function parseGroupByParam(value: string | null): GroupByOption {
+  return (VALID_GROUP_BY_OPTIONS as readonly string[]).includes(value ?? '')
+    ? (value as GroupByOption)
+    : 'none';
+}
+
 function TasksPageContent() {
+  const searchParams = useSearchParams();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [filters, setFilters] = useState<TaskFilters>({
     ...DEFAULT_FILTERS,
     status: ['open', 'in_progress'],
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [groupBy, setGroupBy] = useState<GroupByOption>('none');
+  const [groupBy, setGroupBy] = useState<GroupByOption>(() =>
+    parseGroupByParam(searchParams.get('group')),
+  );
   const [activeStatusTab, setActiveStatusTab] = useState<string | null>('active');
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
@@ -331,7 +342,6 @@ function TasksPageContent() {
   const focusedIndexRef = useRef(focusedIndex);
   const reorderInFlightRef = useRef(false);
   const queryClient = useQueryClient();
-  const searchParams = useSearchParams();
   const { mutate: updateTaskMutate, isPending: isReorderPending } = useUpdateTask();
   const { mutate: closeTaskMutate } = useCloseTask();
   const { register: registerSearch, setQuery: setSearchContextQuery } = useSearch();
@@ -385,6 +395,20 @@ function TasksPageContent() {
       // Preserve current status filter (controlled by tabs, not filter bar)
       status: prev.status,
     }));
+  }, []);
+
+  // Group-by change: update state and sync to URL (?group=<option>) so the
+  // choice survives page refresh. Default 'none' removes the param entirely.
+  const handleGroupByChange = useCallback((newGroupBy: GroupByOption) => {
+    setGroupBy(newGroupBy);
+    const params = new URLSearchParams(window.location.search);
+    if (newGroupBy === 'none') {
+      params.delete('group');
+    } else {
+      params.set('group', newGroupBy);
+    }
+    const qs = params.toString();
+    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
   }, []);
 
   const { data, isPending } = useTasks({
@@ -727,7 +751,7 @@ function TasksPageContent() {
           <>
             <div className="flex items-center justify-between px-3 border-b border-border">
               <StatusTabs activeTab={activeStatusTab} onTabChange={handleStatusTabChange} />
-              <ViewSettingsButton groupBy={groupBy} onGroupByChange={setGroupBy} />
+              <ViewSettingsButton groupBy={groupBy} onGroupByChange={handleGroupByChange} />
             </div>
 
             {/* Filter chips (priority, tags) */}

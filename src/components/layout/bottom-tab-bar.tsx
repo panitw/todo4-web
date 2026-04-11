@@ -23,7 +23,7 @@ export function BottomTabBar() {
     <nav
       role="navigation"
       aria-label="Mobile navigation"
-      className="flex items-center bg-white border-t border-border h-14"
+      className="flex items-stretch bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
     >
       {TAB_ITEMS.map((item) => {
         const active = isActive(item.href);
@@ -33,12 +33,27 @@ export function BottomTabBar() {
             href={item.href}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-colors',
-              active ? 'text-blue-600' : 'text-muted-foreground',
+              'group/tab relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-colors',
+              active ? 'text-white' : 'text-zinc-400 hover:text-white',
             )}
           >
-            <item.icon size={24} />
-            <span className="text-[11px] leading-tight">{item.label}</span>
+            {active && (
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-violet-400"
+              />
+            )}
+            <item.icon
+              size={22}
+              strokeWidth={active ? 2 : 1.75}
+              className={cn(
+                'transition-colors',
+                active ? 'text-violet-300' : 'text-zinc-500 group-hover/tab:text-zinc-300',
+              )}
+            />
+            <span className={cn('text-[11px] leading-tight', active && 'font-medium')}>
+              {item.label}
+            </span>
           </Link>
         );
       })}

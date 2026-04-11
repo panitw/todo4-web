@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Plus } from 'lucide-react';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const emptySubscribe = () => () => {};
 
@@ -33,9 +35,12 @@ export function Fab({ onClick }: FabProps) {
       type="button"
       onClick={onClick}
       aria-label="Create new task"
-      className="md:hidden fixed bottom-[72px] right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 active:scale-95 transition-all hover:opacity-85 [background-image:linear-gradient(135deg,#7c3aed,#3b82f6)]"
+      className={cn(
+        buttonVariants({ variant: 'gradient' }),
+        'fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-4 z-40 size-14 rounded-full shadow-lg active:scale-95 md:hidden',
+      )}
     >
-      <Plus className="h-6 w-6" />
+      <Plus className="size-6" />
     </button>
   );
 }

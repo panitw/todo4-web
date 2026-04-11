@@ -2,7 +2,12 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import {
+  MarketingBackground,
+  marketingBackgroundClassName,
+} from '@/components/marketing/marketing-background';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
+import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
   title: 'Terms and Conditions — Todo4',
@@ -12,16 +17,17 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className={cn(marketingBackgroundClassName, 'flex min-h-screen flex-col text-foreground')}>
+      <MarketingBackground />
       {/* Top bar */}
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
         <Link href="/" aria-label="Todo4 homepage">
           <Image
             src="/todo4-logo.png"
             alt="Todo4"
-            width={112}
-            height={32}
-            className="h-8 w-auto"
+            width={224}
+            height={64}
+            className="h-16 w-auto"
             unoptimized
           />
         </Link>

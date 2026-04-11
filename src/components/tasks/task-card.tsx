@@ -28,27 +28,15 @@ import { useRestoreTask } from '@/hooks/use-restore-task';
 import { useDeleteTask } from '@/hooks/use-delete-task';
 import { CloseTaskDialog } from './close-task-dialog';
 import { AgentProvenanceBadge } from '@/components/shared/agent-provenance-badge';
+import { STATUS_PILL_CONFIG } from './task-shared';
 
 // --- Constants ---
 
 const PRIORITY_CONFIG: Record<string, { dotClass: string; textClass: string; label: string }> = {
-  p1: { dotClass: 'bg-[#dc2626]', textClass: 'text-[#dc2626]', label: 'Critical' },
-  p2: { dotClass: 'bg-[#c2410c]', textClass: 'text-[#c2410c]', label: 'High' },
-  p3: { dotClass: 'bg-[#2563eb]', textClass: 'text-[#2563eb]', label: 'Medium' },
-  p4: { dotClass: 'bg-[#94a3b8]', textClass: 'text-[#94a3b8]', label: 'Low' },
-};
-
-const STATUS_PILL_CONFIG: Record<
-  string,
-  { bg: string; text: string; label: string }
-> = {
-  open: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'To Do' },
-  in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
-  closed: { bg: 'bg-green-100', text: 'text-green-700', label: 'Done' },
-  waiting_for_human: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Waiting' },
-  pending_deletion: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Pending Delete' },
-  blocked: { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
-  archived: { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Archived' },
+  p1: { dotClass: 'bg-red-600', textClass: 'text-red-600', label: 'Critical' },
+  p2: { dotClass: 'bg-orange-700', textClass: 'text-orange-700', label: 'High' },
+  p3: { dotClass: 'bg-blue-600', textClass: 'text-blue-600', label: 'Medium' },
+  p4: { dotClass: 'bg-slate-400', textClass: 'text-slate-500', label: 'Low' },
 };
 
 // --- Helpers ---
@@ -185,19 +173,18 @@ export function TaskCard({
         tabIndex={-1}
         onClick={() => onSelect(task.id)}
         className={cn(
-          'group relative rounded-lg border shadow-sm transition-colors cursor-pointer',
+          'group relative cursor-pointer border-b border-border transition-colors',
           'p-3 md:p-4',
-          'border-[#e2e8f0]',
+          // Left accent rail — reserved slot so rows don't jitter between states
+          'border-l-2 border-l-transparent',
           // Focus indicator
-          focused && 'outline outline-2 outline-offset-2 outline-indigo-500',
+          focused && 'outline outline-2 -outline-offset-2 outline-indigo-500',
           // Card states
           selected
-            ? 'bg-[#EEF2FF] border-l-2 border-l-indigo-500'
+            ? 'bg-indigo-50 border-l-indigo-600'
             : highlighted
-              ? 'bg-green-50'
-              : 'bg-white md:hover:bg-[#f8fafc]',
-          // Agent-touched (always visible per AC#3)
-          hasAgentTouch && !selected && 'border-l-2 border-l-teal-500 bg-teal-50/50',
+              ? 'bg-emerald-50/60'
+              : 'bg-transparent md:hover:bg-zinc-50',
           // Completed — muted styling applied per-element (title, bottom row), not whole card
           // In-progress title weight handled below
           isDragging && 'opacity-0',
@@ -230,8 +217,8 @@ export function TaskCard({
               className={cn(
                 'group/check relative flex items-center justify-center shrink-0 size-5 border-[1.5px] rounded transition-colors after:absolute after:-inset-3',
                 completed
-                  ? 'bg-green-600 border-green-600 text-white hover:bg-gray-100 hover:border-gray-400 hover:text-gray-400 active:bg-gray-500 active:border-gray-500 active:text-white'
-                  : 'border-[#cbd5e1] hover:border-gray-400 active:border-green-600 active:bg-green-600',
+                  ? 'bg-emerald-600 border-emerald-600 text-white hover:bg-zinc-100 hover:border-zinc-400 hover:text-zinc-400 active:bg-zinc-500 active:border-zinc-500 active:text-white'
+                  : 'border-zinc-300 hover:border-zinc-500 active:border-emerald-600 active:bg-emerald-600',
               )}
             >
               {completed && <CheckIcon className="size-3.5" />}
@@ -258,7 +245,7 @@ export function TaskCard({
                   onBlur={handleTitleBlur}
                   onFocus={() => setEditTitle(task.title)}
                   autoFocus
-                  className="flex-1 min-w-0 text-[15px] font-medium bg-transparent border-b border-indigo-300 outline-none px-0 py-0"
+                  className="flex-1 min-w-0 text-[15px] font-medium bg-transparent border-b border-indigo-500 outline-none px-0 py-0"
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
@@ -338,15 +325,15 @@ export function TaskCard({
             <div className={cn('flex items-center gap-2 mt-2 flex-wrap', completed && 'opacity-60')}>
           {/* Tag chips */}
           {task.tags && task.tags.length > 0 && (
-            <span className="hidden sm:flex items-center gap-1.5">
+            <span className="hidden sm:flex items-center gap-1">
               {task.tags.slice(0, 3).map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTagClick?.(tag); }}
                   className={cn(
-                    'px-2 py-0.5 rounded-full text-[12px] bg-[#f1f5f9] text-[#475569]',
-                    onTagClick ? 'cursor-pointer hover:bg-slate-200' : 'cursor-default',
+                    'rounded-full px-2 py-0.5 text-[11px] font-medium text-zinc-600 bg-zinc-100/70',
+                    onTagClick ? 'cursor-pointer hover:bg-zinc-200 hover:text-zinc-800' : 'cursor-default',
                   )}
                 >
                   {tag}
@@ -358,7 +345,7 @@ export function TaskCard({
           {/* Status pill */}
           <span
             className={cn(
-              'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium',
+              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
               statusPill.bg,
               statusPill.text,
             )}
@@ -370,11 +357,11 @@ export function TaskCard({
           {task.dueDate && (
             <span
               className={cn(
-                'inline-flex items-center gap-1 text-[12px]',
-                overdue ? 'text-[#dc2626]' : 'text-muted-foreground',
+                'inline-flex items-center gap-1 text-[11px] font-medium',
+                overdue ? 'text-red-600' : 'text-muted-foreground',
               )}
             >
-              <Calendar className="h-3.5 w-3.5" aria-hidden="true" />
+              <Calendar className="size-3" aria-hidden="true" />
               <span>{formatDate(task.dueDate)}</span>
             </span>
           )}
@@ -382,7 +369,7 @@ export function TaskCard({
           {/* Priority dot + label */}
           <span className={cn('inline-flex items-center gap-1 text-[11px] font-medium', priority.textClass)}>
             <span
-              className={cn('w-[7px] h-[7px] rounded-full shrink-0', priority.dotClass)}
+              className={cn('size-1.5 shrink-0 rounded-full', priority.dotClass)}
               aria-hidden="true"
             />
             <span>{priority.label}</span>

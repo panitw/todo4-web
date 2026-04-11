@@ -1,17 +1,21 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import {
+  MarketingBackground,
+  marketingBackgroundClassName,
+} from '@/components/marketing/marketing-background';
+import { cn } from '@/lib/utils';
+import { AuthBackLink } from './auth-back-link';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-12">
+    <main
+      className={cn(
+        marketingBackgroundClassName,
+        'flex min-h-screen items-center justify-center px-4 py-12',
+      )}
+    >
+      <MarketingBackground />
       <div className="w-full max-w-sm">
-        <Link
-          href="/"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft size={16} />
-          Back to home
-        </Link>
+        <AuthBackLink />
         <div className="rounded-xl border border-border bg-card p-8 shadow-sm">
           {children}
         </div>

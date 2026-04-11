@@ -7,9 +7,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import {
+  MarketingBackground,
+  marketingBackgroundClassName,
+} from '@/components/marketing/marketing-background';
 import { MarketingFooter } from '@/components/marketing/marketing-footer';
 import { logout } from '@/lib/api/auth';
 import { getProfile, recordConsent } from '@/lib/api/users';
+import { cn } from '@/lib/utils';
 
 export function WelcomeTermsForm() {
   const router = useRouter();
@@ -87,15 +92,16 @@ export function WelcomeTermsForm() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className={cn(marketingBackgroundClassName, 'flex min-h-screen flex-col text-foreground')}>
+      <MarketingBackground />
       <header className="mx-auto flex w-full max-w-3xl items-center justify-between px-4 py-4">
         <Link href="/" aria-label="Todo4 homepage">
           <Image
             src="/todo4-logo.png"
             alt="Todo4"
-            width={112}
-            height={32}
-            className="h-8 w-auto"
+            width={64}
+            height={64}
+            className="size-16"
             unoptimized
           />
         </Link>
@@ -108,7 +114,7 @@ export function WelcomeTermsForm() {
         </Link>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 pb-16">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-16">
         <h1 className="text-3xl font-bold tracking-tight">
           Welcome to Todo4{firstName ? `, ${firstName}` : ''}
         </h1>

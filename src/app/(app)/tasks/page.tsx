@@ -712,39 +712,6 @@ function TasksPageContent() {
   return (
     <>
       <div className="flex flex-col h-full">
-        {/* Mobile search row — hidden on desktop where layout top bar provides search */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-border md:hidden">
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-          <input
-            type="text"
-            placeholder="Search tasks..."
-            aria-label="Search tasks"
-            value={searchQuery}
-            onChange={(e) => {
-              const value = e.target.value;
-              setSearchQuery(value);
-              setSearchContextQuery(value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                clearSearch();
-                (e.target as HTMLInputElement).blur();
-              }
-            }}
-            className="flex-1 min-w-0 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => clearSearch()}
-              className="shrink-0 p-0.5 rounded hover:bg-muted text-muted-foreground"
-              aria-label="Clear search"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-
         {/* Status tabs + View settings row — hidden when no tasks exist at all (onboarding state) */}
         {(isPending || hasAnyTasks) && (
           <>

@@ -19,9 +19,9 @@ export default function PrivacyPage() {
           <Image
             src="/todo4-logo.png"
             alt="Todo4"
-            width={112}
-            height={32}
-            className="h-8 w-auto"
+            width={224}
+            height={64}
+            className="h-16 w-auto"
             unoptimized
           />
         </Link>

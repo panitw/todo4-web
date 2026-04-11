@@ -35,26 +35,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { SectionHeader, PRIORITY_LABELS, PRIORITY_COLORS } from './task-shared';
-
-// ─── Constants ──────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
-  open: { bg: 'bg-slate-100', text: 'text-slate-700', label: 'To Do' },
-  in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
-  closed: { bg: 'bg-green-100', text: 'text-green-700', label: 'Done' },
-  waiting_for_human: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Waiting' },
-  pending_deletion: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Pending Delete' },
-  blocked: { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
-  archived: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Archived' },
-};
+import { cn } from '@/lib/utils';
+import {
+  SectionHeader,
+  PRIORITY_LABELS,
+  PRIORITY_COLORS,
+  STATUS_PILL_CONFIG,
+} from './task-shared';
 
 // ─── Status Badge (read-only, for non-editable states) ──────────────────────
 
 function StatusBadge({ status }: { status: Task['status'] }) {
-  const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.open;
+  const config = STATUS_PILL_CONFIG[status] ?? STATUS_PILL_CONFIG.open;
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={cn(
+        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+        config.bg,
+        config.text,
+      )}
+    >
       {config.label}
     </span>
   );
@@ -62,22 +62,24 @@ function StatusBadge({ status }: { status: Task['status'] }) {
 
 // ─── Status Transition Button (JIRA-style) ─────────────────────────────────
 
+type StatusActionVariant = 'gradient' | 'outline';
+
 interface StatusAction {
   label: string;
   targetStatus: string;
-  style: string;
+  variant: StatusActionVariant;
 }
 
 const STATUS_ACTIONS: Record<string, StatusAction[]> = {
   open: [
-    { label: 'Start Working', targetStatus: 'in_progress', style: 'text-white hover:opacity-85 [background-image:linear-gradient(135deg,#7c3aed,#3b82f6)]' },
+    { label: 'Start Working', targetStatus: 'in_progress', variant: 'gradient' },
   ],
   in_progress: [
-    { label: 'Done', targetStatus: 'closed', style: 'text-white hover:opacity-85 [background-image:linear-gradient(135deg,#7c3aed,#3b82f6)]' },
-    { label: 'To Do', targetStatus: 'open', style: 'border border-border bg-background hover:bg-muted text-foreground' },
+    { label: 'Done', targetStatus: 'closed', variant: 'gradient' },
+    { label: 'To Do', targetStatus: 'open', variant: 'outline' },
   ],
   closed: [
-    { label: 'Reopen', targetStatus: 'open', style: 'border border-border bg-background hover:bg-muted text-foreground' },
+    { label: 'Reopen', targetStatus: 'open', variant: 'outline' },
   ],
 };
 
@@ -107,15 +109,16 @@ function StatusTransitionBar({ task }: { task: Task }) {
     <div className="flex items-center gap-2">
       <StatusBadge status={task.status} />
       {actions.map((action) => (
-        <button
+        <Button
           key={action.targetStatus}
           type="button"
+          variant={action.variant}
+          size="sm"
           disabled={isPending}
           onClick={() => handleTransition(action.targetStatus)}
-          className={`inline-flex items-center px-3 py-1 rounded-md text-xs font-medium transition-colors disabled:opacity-50 ${action.style}`}
         >
           {action.label}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -297,23 +300,106 @@ function DescriptionEditor({ task }: { task: Task }) {
 
 // ─── History Entry ───────────────────────────────────────────────────────────
 
+function formatRelativeTime(date: Date): string {
+  const diffMs = Date.now() - date.getTime();
+  const seconds = Math.floor(diffMs / 1000);
+  if (seconds < 45) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+const FRIENDLY_FIELD_NAMES: Record<string, string> = {
+  dueDate: 'due date',
+  priority: 'priority',
+  title: 'title',
+  description: 'description',
+  tags: 'tags',
+  status: 'status',
+};
+
+function formatHistoryValue(field: string, value: unknown): string {
+  if (value === null || value === undefined || value === '') return 'none';
+  if (field === 'dueDate' && typeof value === 'string') {
+    const d = new Date(value);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+  }
+  if (field === 'priority') {
+    return PRIORITY_LABELS[String(value)] ?? String(value);
+  }
+  if (field === 'status') {
+    return STATUS_PILL_CONFIG[String(value)]?.label ?? String(value);
+  }
+  return String(value);
+}
+
 function HistoryEntry({ entry }: { entry: TaskHistory }) {
   const details = entry.details as { field?: string; oldValue?: unknown; newValue?: unknown; reasoning?: string } | null;
-  const timestamp = new Date(entry.createdAt).toLocaleString();
+  const isAgent = entry.actorType !== 'human';
+  const actor = isAgent ? 'Agent' : 'You';
+  const createdAt = new Date(entry.createdAt);
+  const relative = formatRelativeTime(createdAt);
+  const absolute = createdAt.toLocaleString();
+
+  let message: React.ReactNode;
+  if (entry.action === 'status_changed' && details?.newValue !== undefined) {
+    message = (
+      <>
+        marked as{' '}
+        <span className="font-medium text-foreground">
+          {formatHistoryValue('status', details.newValue)}
+        </span>
+      </>
+    );
+  } else if (entry.action === 'field_updated' && details?.field) {
+    const friendlyField = FRIENDLY_FIELD_NAMES[details.field] ?? details.field;
+    const newVal = formatHistoryValue(details.field, details.newValue);
+    if (newVal === 'none') {
+      message = <>cleared {friendlyField}</>;
+    } else {
+      message = (
+        <>
+          updated {friendlyField} to{' '}
+          <span className="font-medium text-foreground">{newVal}</span>
+        </>
+      );
+    }
+  } else if (entry.action === 'created') {
+    message = <>created this task</>;
+  } else {
+    message = <>{entry.action.replace(/_/g, ' ')}</>;
+  }
 
   return (
-    <div className="text-xs py-1.5 border-b border-border last:border-0">
-      <span className="text-muted-foreground">{timestamp}</span>
-      {' · '}<span className="font-medium">{entry.actorType}</span>
-      {' '}<span className="font-mono">{entry.actorId.slice(0, 8)}</span>
-      {' · '}<span>{entry.action}</span>
-      {details?.field && (
-        <span className="text-muted-foreground">
-          {' → '}{details.field}: <span className="line-through">{String(details.oldValue ?? '')}</span>
-          {' → '}{String(details.newValue ?? '')}
-        </span>
-      )}
-      {details?.reasoning && <p className="mt-0.5 text-muted-foreground italic">Reasoning: {details.reasoning}</p>}
+    <div className="flex items-start gap-3 py-2 text-xs border-b border-border last:border-0">
+      <span
+        aria-hidden="true"
+        className={cn(
+          'mt-1 size-1.5 shrink-0 rounded-full',
+          isAgent ? 'bg-teal-500' : 'bg-indigo-500',
+        )}
+      />
+      <div className="min-w-0 flex-1">
+        <p className="text-muted-foreground">
+          <span className="font-medium text-foreground">{actor}</span> {message}
+        </p>
+        {details?.reasoning && (
+          <p className="mt-0.5 italic text-muted-foreground">{details.reasoning}</p>
+        )}
+      </div>
+      <time
+        dateTime={createdAt.toISOString()}
+        title={absolute}
+        className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground"
+      >
+        {relative}
+      </time>
     </div>
   );
 }
@@ -573,16 +659,22 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
               <button
                 onClick={() => setShowAgentNotes((v) => !v)}
                 aria-expanded={showAgentNotes}
-                className="flex items-center gap-2 mb-2 group"
+                className="group mb-2 flex w-full items-center gap-3"
               >
-                <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Agent Notes</span>
-                <span className="flex-1 h-px bg-indigo-100" />
-                <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
+                <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-teal-500" />
+                <span className="shrink-0 whitespace-nowrap text-xs font-semibold uppercase tracking-[0.08em] text-zinc-700">
+                  Agent Notes
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="h-px flex-1 bg-gradient-to-r from-border via-border/60 to-transparent"
+                />
+                <span className="text-xs text-muted-foreground transition-colors group-hover:text-foreground">
                   {showAgentNotes ? '▾' : '▸'}
                 </span>
               </button>
               {showAgentNotes && (
-                <div className="opacity-60 bg-muted/30 p-3 rounded text-sm font-mono whitespace-pre-wrap text-muted-foreground">
+                <div className="whitespace-pre-wrap rounded bg-muted/30 p-3 font-mono text-sm text-muted-foreground opacity-60">
                   {task.agentNotes}
                 </div>
               )}

@@ -28,6 +28,7 @@ import { useRestoreTask } from '@/hooks/use-restore-task';
 import { useDeleteTask } from '@/hooks/use-delete-task';
 import { CloseTaskDialog } from './close-task-dialog';
 import { AgentProvenanceBadge } from '@/components/shared/agent-provenance-badge';
+import { STATUS_PILL_CONFIG } from './task-shared';
 
 // --- Constants ---
 
@@ -36,19 +37,6 @@ const PRIORITY_CONFIG: Record<string, { dotClass: string; textClass: string; lab
   p2: { dotClass: 'bg-orange-700', textClass: 'text-orange-700', label: 'High' },
   p3: { dotClass: 'bg-blue-600', textClass: 'text-blue-600', label: 'Medium' },
   p4: { dotClass: 'bg-slate-400', textClass: 'text-slate-500', label: 'Low' },
-};
-
-const STATUS_PILL_CONFIG: Record<
-  string,
-  { bg: string; text: string; label: string }
-> = {
-  open: { bg: 'bg-zinc-100', text: 'text-zinc-700', label: 'To Do' },
-  in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'In Progress' },
-  closed: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Done' },
-  waiting_for_human: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Waiting' },
-  pending_deletion: { bg: 'bg-orange-100', text: 'text-orange-700', label: 'Pending Delete' },
-  blocked: { bg: 'bg-red-100', text: 'text-red-700', label: 'Blocked' },
-  archived: { bg: 'bg-zinc-100', text: 'text-zinc-600', label: 'Archived' },
 };
 
 // --- Helpers ---

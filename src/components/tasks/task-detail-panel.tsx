@@ -165,10 +165,17 @@ function ConfirmationActionBar({ task, onClose }: { task: Task; onClose: () => v
   );
 }
 
-// ─── Due Date Input (controlled) ────────────────────────────────────────────
+// ─── Due Date Input (click-to-edit) ─────────────────────────────────────────
+
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 function DueDateInput({ task }: { task: Task }) {
   const [localDate, setLocalDate] = useState(task.dueDate ? task.dueDate.substring(0, 10) : '');
+  const [isEditing, setIsEditing] = useState(false);
   const { mutate } = useUpdateTask();
 
   useEffect(() => {
@@ -177,6 +184,7 @@ function DueDateInput({ task }: { task: Task }) {
   }, [task.dueDate]);
 
   const handleBlur = useCallback(() => {
+    setIsEditing(false);
     const serverDate = task.dueDate ? task.dueDate.substring(0, 10) : '';
     if (localDate === serverDate) return;
     // Validate date format before sending to server
@@ -190,9 +198,109 @@ function DueDateInput({ task }: { task: Task }) {
     });
   }, [localDate, task.dueDate, task.id, mutate]);
 
+  if (isEditing) {
+    return (
+      <Input
+        type="date"
+        value={localDate}
+        onChange={(e) => setLocalDate(e.target.value)}
+        className="h-8 w-full text-xs"
+        onBlur={handleBlur}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            setLocalDate(task.dueDate ? task.dueDate.substring(0, 10) : '');
+            setIsEditing(false);
+          }
+          if (e.key === 'Enter') {
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        autoFocus
+        aria-label="Due date"
+      />
+    );
+  }
+
   return (
-    <Input type="date" value={localDate} onChange={(e) => setLocalDate(e.target.value)}
-      className="w-36 h-7 text-xs" onBlur={handleBlur} aria-label="Due date" />
+    <button
+      type="button"
+      onClick={() => setIsEditing(true)}
+      title={localDate ? new Date(localDate).toLocaleDateString(undefined, { dateStyle: 'long' }) : undefined}
+      aria-label={localDate ? `Due ${formatShortDate(localDate)}, click to edit` : 'Set due date'}
+      className="-mx-1 flex h-8 w-[calc(100%+0.5rem)] items-center rounded-md px-2 text-left text-sm transition-colors hover:bg-zinc-200/60"
+    >
+      {localDate
+        ? <span className="truncate text-foreground">{formatShortDate(localDate)}</span>
+        : <span className="text-muted-foreground">Set date</span>
+      }
+    </button>
+  );
+}
+
+// ─── Priority Select (controlled, borderless inside MetaCard) ───────────────
+
+function PrioritySelect({ task }: { task: Task }) {
+  const { mutate, isPending } = useUpdateTask();
+  return (
+    <Select
+      value={task.priority}
+      disabled={isPending}
+      onValueChange={(v) => mutate(
+        { id: task.id, data: { priority: v as Task['priority'] } },
+        { onError: () => showError('Failed to update priority') },
+      )}
+    >
+      <SelectTrigger
+        aria-label="Priority"
+        className="-mx-1 h-8 w-[calc(100%+0.5rem)] justify-start gap-2 border-0 bg-transparent px-2 text-sm shadow-none hover:bg-zinc-200/60 focus:ring-0 focus-visible:ring-0 data-[state=open]:bg-zinc-200/60"
+      >
+        <span className={PRIORITY_COLORS[task.priority]}>&#9679;</span>
+        <span className="flex-1 text-left">{PRIORITY_LABELS[task.priority]}</span>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="p1"><span className="text-red-600">&#9679;</span> Critical</SelectItem>
+        <SelectItem value="p2"><span className="text-orange-700">&#9679;</span> High</SelectItem>
+        <SelectItem value="p3"><span className="text-blue-600">&#9679;</span> Medium</SelectItem>
+        <SelectItem value="p4"><span className="text-slate-400">&#9679;</span> Low</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+// ─── Metadata Card ──────────────────────────────────────────────────────────
+
+function MetaField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+        {label}
+      </span>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function MetaCard({ task }: { task: Task }) {
+  const createdFull = new Date(task.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' });
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="rounded-lg border border-border bg-zinc-50/60 p-3">
+        <div className="grid grid-cols-2 gap-3">
+          <MetaField label="Priority">
+            <PrioritySelect task={task} />
+          </MetaField>
+          <MetaField label="Due">
+            <DueDateInput task={task} />
+          </MetaField>
+        </div>
+      </div>
+      <p className="px-1 text-[11px] text-muted-foreground">
+        Created{' '}
+        <time dateTime={task.createdAt} title={createdFull} className="text-foreground/70">
+          {formatShortDate(task.createdAt)}
+        </time>
+      </p>
+    </div>
   );
 }
 
@@ -509,11 +617,20 @@ function TagsEditor({ task }: { task: Task }) {
     (t) => t.name.toLowerCase().includes(tagInput.toLowerCase()) && !localTags.includes(t.name),
   ) ?? [];
 
+  const isEmpty = localTags.length === 0;
+
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex flex-wrap items-center gap-1 rounded-lg border border-input bg-background px-3 py-2 min-h-[36px]">
+      <div
+        className={cn(
+          'flex min-h-[40px] flex-wrap items-center gap-1.5 rounded-lg px-3 py-2 transition-colors',
+          isEmpty
+            ? 'border border-dashed border-border bg-transparent focus-within:border-indigo-400 focus-within:bg-background'
+            : 'border border-input bg-background',
+        )}
+      >
         {localTags.map((tag) => (
-          <Badge key={tag} variant="secondary" className="text-xs gap-1">
+          <Badge key={tag} variant="secondary" className="gap-1 text-xs">
             {tag}
             <button type="button" onClick={() => removeTag(tag)} className="ml-0.5 hover:text-destructive" aria-label={`Remove tag ${tag}`}>
               <X className="h-3 w-3" />
@@ -530,9 +647,9 @@ function TagsEditor({ task }: { task: Task }) {
             if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); addTag(tagInput); }
             if (e.key === 'Escape') setShowSuggestions(false);
           }}
-          placeholder={localTags.length === 0 ? 'Type to add tags...' : ''}
+          placeholder={isEmpty ? 'Type a tag and press Enter' : ''}
           aria-label="Add tag"
-          className="flex-1 min-w-[100px] bg-transparent text-sm outline-none border-none shadow-none focus:ring-0 focus:outline-none placeholder:text-muted-foreground"
+          className="min-w-[100px] flex-1 border-none bg-transparent text-sm shadow-none outline-none placeholder:text-muted-foreground focus:outline-none focus:ring-0"
           style={{ outline: 'none', boxShadow: 'none' }}
         />
       </div>
@@ -567,7 +684,6 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
   const { mutate: archiveMutate } = useArchiveTask();
   const { mutate: restoreMutate } = useRestoreTask();
   const { mutate: deleteMutate } = useDeleteTask();
-  const { mutate: updateMutate, isPending: isPriorityPending } = useUpdateTask();
 
   useEffect(() => {
     const timer = setTimeout(() => closeButtonRef.current?.focus(), 100);
@@ -607,32 +723,15 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col gap-5 p-4">
+        <div className="flex flex-col gap-6 p-4">
 
           {/* Confirmation bar */}
           <ConfirmationActionBar task={task} onClose={onClose} />
 
-          {/* Title */}
-          <InlineEditableTitle task={task} />
-
-          {/* Metadata */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <Select value={task.priority} disabled={isPriorityPending}
-              onValueChange={(v) => updateMutate({ id: task.id, data: { priority: v as Task['priority'] } },
-                { onError: () => showError('Failed to update priority') })}
-            >
-              <SelectTrigger className="w-auto h-7 text-xs" aria-label="Priority">
-                <span className={PRIORITY_COLORS[task.priority]}>&#9679;</span>
-                <span>{PRIORITY_LABELS[task.priority]}</span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="p1"><span className="text-red-600">&#9679;</span> Critical</SelectItem>
-                <SelectItem value="p2"><span className="text-orange-700">&#9679;</span> High</SelectItem>
-                <SelectItem value="p3"><span className="text-blue-600">&#9679;</span> Medium</SelectItem>
-                <SelectItem value="p4"><span className="text-gray-400">&#9679;</span> Low</SelectItem>
-              </SelectContent>
-            </Select>
-            <DueDateInput task={task} />
+          {/* Header group — title + structured metadata live together */}
+          <div className="flex flex-col gap-4">
+            <InlineEditableTitle task={task} />
+            <MetaCard task={task} />
           </div>
 
           {/* Description */}

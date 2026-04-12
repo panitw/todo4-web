@@ -58,6 +58,23 @@ export async function resetPassword(token: string, newPassword: string): Promise
   });
 }
 
+export async function requestLoginOtp(email: string): Promise<void> {
+  await apiFetch<{ message: string }>('/api/v1/auth/login-otp-request', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyLoginOtp(
+  email: string,
+  code: string,
+): Promise<LoginResult> {
+  return apiFetch<LoginResult>('/api/v1/auth/login-otp-verify', {
+    method: 'POST',
+    body: JSON.stringify({ email, code }),
+  });
+}
+
 export async function confirmEmailChange(
   token: string,
 ): Promise<ConfirmEmailChangeResult> {

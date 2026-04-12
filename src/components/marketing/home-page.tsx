@@ -131,12 +131,12 @@ function Step2Content({ platform }: { platform: Platform }) {
           &ldquo;Set me up with Todo4&rdquo;
         </div>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-          The <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">@todo4/onboard</code> skill
+          The <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">/todo4-onboard</code> skill
           handles everything &mdash; account, verification, and agent connection. No browser needed.
         </p>
         <p className="mt-2 text-xs text-zinc-600">
           Or install manually:{' '}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono">openclaw install @todo4/onboard</code>
+          <code className="rounded bg-muted px-1 py-0.5 font-mono">openclaw install /todo4-onboard</code>
         </p>
       </div>
     );

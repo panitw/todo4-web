@@ -694,7 +694,7 @@ export function TaskDetailPanel({ task, onClose }: TaskDetailPanelProps) {
     <>
     <div role="complementary" aria-label="Task detail" className="flex flex-col h-full">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+      <div className="flex items-center justify-between px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border shrink-0">
         <StatusTransitionBar task={task} />
         <div className="flex items-center gap-1">
           {task.status === 'closed' && (

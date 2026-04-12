@@ -39,7 +39,13 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
     redirect: 'manual', // pass 3xx back to the browser unchanged
   });
 
-  return new NextResponse(upstream.body, {
+  // Buffer the response instead of streaming upstream.body directly.
+  // Streaming via new NextResponse(upstream.body, ...) triggers undici
+  // BodyTimeoutError ("failed to pipe response") under certain conditions
+  // (e.g. small JSON payloads with Set-Cookie headers on Railway edge).
+  const responseBody = await upstream.arrayBuffer();
+
+  return new NextResponse(responseBody, {
     status: upstream.status,
     statusText: upstream.statusText,
     headers: upstream.headers,

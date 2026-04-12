@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { Plus } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, primeMobileKeyboardFocus } from '@/lib/utils';
 
 const emptySubscribe = () => () => {};
 
@@ -30,10 +30,15 @@ export function Fab({ onClick }: FabProps) {
 
   if (!mounted || isKeyboardOpen) return null;
 
+  function handleClick() {
+    primeMobileKeyboardFocus();
+    onClick();
+  }
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       aria-label="Create new task"
       className={cn(
         buttonVariants({ variant: 'gradient' }),

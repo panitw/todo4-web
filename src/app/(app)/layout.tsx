@@ -14,6 +14,7 @@ import { CommandPalette } from '@/components/command-palette';
 import { OfflineBanner } from '@/components/shared/offline-banner';
 import { useSearch } from '@/providers/search-provider';
 import { useCreateTaskAction } from '@/providers/create-task-provider';
+import { primeMobileKeyboardFocus } from '@/lib/utils';
 import { getProfile } from '@/lib/api/users';
 
 const DesktopSidebar = dynamic(
@@ -142,7 +143,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {showTaskBar && createTaskActive && (
                 <button
                   type="button"
-                  onClick={triggerCreateTask}
+                  onClick={() => {
+                    primeMobileKeyboardFocus();
+                    triggerCreateTask();
+                  }}
                   className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-85 active:opacity-75 [background-image:linear-gradient(135deg,#7c3aed,#3b82f6)]"
                 >
                   <Plus className="h-4 w-4" />

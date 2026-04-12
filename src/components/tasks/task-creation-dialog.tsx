@@ -89,8 +89,6 @@ export function TaskCreationDialog({
   useEffect(() => {
     if (open) {
       triggerRef.current = document.activeElement as HTMLElement;
-      const timer = setTimeout(() => titleRef.current?.focus(), 100);
-      return () => clearTimeout(timer);
     }
   }, [open]);
 
@@ -178,10 +176,10 @@ export function TaskCreationDialog({
 
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
-      <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-md lg:max-w-lg p-0 flex flex-col">
+      <SheetContent side="right" showCloseButton={false} initialFocus={titleRef} className="w-full sm:max-w-md lg:max-w-lg p-0 flex flex-col">
 
         {/* Top bar — matches detail panel */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border shrink-0">
           <span className="text-sm font-medium text-foreground">New Task</span>
           <div className="flex items-center gap-1">
             <Button size="sm" variant="outline" onClick={handleClose} disabled={isPending}>Cancel</Button>

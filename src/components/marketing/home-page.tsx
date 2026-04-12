@@ -1,222 +1,404 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bot, ShieldCheck, Bell, Plug } from 'lucide-react';
+import { Bot, ShieldCheck, Bell, Copy, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MarketingBackground, marketingBackgroundClassName } from './marketing-background';
 import { MarketingFooter } from './marketing-footer';
 
-const features = [
+const MCP_URL = (process.env.NEXT_PUBLIC_MCP_URL ?? '').trim() || 'https://todo4.com/mcp';
+
+type Platform = 'openclaw' | 'claude' | 'chatgpt';
+
+const platforms = [
+  {
+    id: 'openclaw' as Platform,
+    name: 'OpenClaw',
+    logo: '/openclaw.webp',
+    tagline: 'Install the skill from chat',
+    disabled: false,
+  },
+  {
+    id: 'claude' as Platform,
+    name: 'Claude',
+    logo: '/claude.svg',
+    tagline: 'Paste the MCP config',
+    disabled: false,
+  },
+  {
+    id: 'chatgpt' as Platform,
+    name: 'ChatGPT',
+    logo: '/chatgpt.png',
+    tagline: 'Coming soon',
+    disabled: true,
+  },
+] as const;
+
+const trustBlocks = [
   {
     icon: Bot,
-    title: 'AI Agent Integration',
+    title: 'Agent-first, not agent-added',
     description:
-      'Your AI plans, prioritises, and executes tasks on your behalf. Connect your favourite agent and let it handle the busy-work.',
+      '18 purpose-built MCP tools. Duplicate detection. Natural language dates. Your agent doesn\u2019t need a manual.',
+    iconColor: 'text-teal-600',
+    iconBg: 'bg-teal-600/10',
   },
   {
     icon: ShieldCheck,
-    title: 'Trust & Control',
+    title: 'Trust you can see',
     description:
-      'Approve or reject agent actions before they take effect. Every change is audited so you always know what happened and why.',
+      'Destructive actions require your approval. Every action logged with reasoning. Nothing permanently deleted for a year.',
+    iconColor: 'text-indigo-600',
+    iconBg: 'bg-indigo-600/10',
   },
   {
     icon: Bell,
-    title: 'Real-Time Visibility',
+    title: 'Know when it\u2019s your turn',
     description:
-      'Watch your agent work in real time with instant notifications. Weekly summaries keep you informed even when you step away.',
-  },
-  {
-    icon: Plug,
-    title: 'Multi-Platform',
-    description:
-      'Connect Claude, ChatGPT, or any MCP-compatible agent. One platform, many assistants — your choice.',
+      'Needs Attention collects everything that\u2019s waiting on you. Resolve pending items in under 2 minutes.',
+    iconColor: 'text-amber-500',
+    iconBg: 'bg-amber-500/10',
   },
 ] as const;
 
-const screenshots = [
-  { src: '/screenshot1.png', alt: 'Todo4 — task list grouped by priority' },
-  { src: '/screenshot2.png', alt: 'Todo4 — task detail with description and subtasks' },
-  { src: '/screenshot3.png', alt: 'Todo4 — calendar view with scheduled tasks' },
-  { src: '/screenshot4.png', alt: 'Todo4 — agent connections and integrations' },
-] as const;
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-const platforms = [
-  { name: 'OpenClaw', logo: '/openclaw.webp' },
-  { name: 'Claude', logo: '/claude.svg' },
-  { name: 'ChatGPT', logo: '/chatgpt.png' },
-] as const;
-
-function ScreenshotCarousel() {
-  const [active, setActive] = useState(0);
-
-  const next = useCallback(() => {
-    setActive((i) => (i + 1) % screenshots.length);
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
-  // Auto-advance every 5 seconds, pause on hover
-  const [paused, setPaused] = useState(false);
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(next, 3000);
-    return () => clearInterval(id);
-  }, [paused, next]);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied!');
+      setCopied(true);
+
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast.error('Unable to copy. Please copy manually.');
+    }
+  };
 
   return (
-    <section
-      aria-label="Product screenshots"
-      className="w-full px-4 pb-8 md:pb-12"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="absolute top-3 right-3 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+      aria-label="Copy to clipboard"
     >
-      <div className="mx-auto max-w-5xl">
-        <div className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${active * 100}%)` }}
-          >
-            {screenshots.map((shot) => (
-              <div key={shot.src} className="w-full shrink-0 cursor-pointer px-2" onClick={next}>
-                <Image
-                  src={shot.src}
-                  alt={shot.alt}
-                  width={1200}
-                  height={800}
-                  className="mx-auto w-full max-w-4xl"
-                  unoptimized
-                  priority
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+      {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+    </button>
+  );
+}
 
-        {/* Dot indicators */}
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {screenshots.map((shot, i) => (
-            <button
-              key={shot.src}
-              type="button"
-              onClick={() => setActive(i)}
-              aria-label={`Show screenshot ${i + 1}`}
-              className={cn(
-                'h-2.5 rounded-full transition-all',
-                i === active ? 'w-8 bg-primary' : 'w-2.5 bg-muted-foreground/30 hover:bg-muted-foreground/50',
-              )}
-            />
-          ))}
+function StepBadge({ number }: { number: number }) {
+  return (
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+      {number}
+    </span>
+  );
+}
+
+function StepConnector({ className }: { className?: string }) {
+  return (
+    <div className={cn('flex items-center justify-center', className)} aria-hidden="true">
+      {/* Vertical line on mobile only — desktop relies on numbered badges for flow */}
+      <div className="h-8 w-px bg-border md:hidden" />
+    </div>
+  );
+}
+
+function Step2Content({ platform }: { platform: Platform }) {
+  const mcpConfig = JSON.stringify(
+    { mcpServers: { todo4: { url: MCP_URL } } },
+    null,
+    2,
+  );
+
+  if (platform === 'openclaw') {
+    return (
+      <div>
+        <h4 className="mb-3 text-base font-semibold text-foreground">Say it in chat</h4>
+        <div className="rounded-lg bg-zinc-900 p-4 font-mono text-sm text-zinc-100">
+          &ldquo;Set me up with Todo4&rdquo;
         </div>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+          The <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">@todo4/onboard</code> skill
+          handles everything &mdash; account, verification, and agent connection. No browser needed.
+        </p>
+        <p className="mt-2 text-xs text-zinc-600">
+          Or install manually:{' '}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono">openclaw install @todo4/onboard</code>
+        </p>
       </div>
-    </section>
+    );
+  }
+
+  if (platform === 'claude') {
+    return (
+      <div>
+        <h4 className="mb-3 text-base font-semibold text-foreground">Add to your MCP config</h4>
+        <div className="relative rounded-lg bg-zinc-900 p-4 pr-12 font-mono text-sm text-zinc-100">
+          <CopyButton text={mcpConfig} />
+          <pre className="overflow-x-auto">{mcpConfig}</pre>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+          Paste into your Claude Desktop or Claude Code MCP config. OAuth will prompt on first
+          connection.
+        </p>
+        <p className="mt-1 text-xs text-zinc-600">
+          Works with Claude Desktop, Claude Code, and any MCP-compatible client.
+        </p>
+      </div>
+    );
+  }
+
+  // chatgpt
+  return (
+    <div>
+      <h4 className="mb-3 text-base font-semibold text-foreground">Coming soon</h4>
+      <p className="text-sm text-zinc-600">
+        ChatGPT integration via OpenAI Apps SDK is in development. Sign up to get notified.
+      </p>
+      <div className="mt-4 flex gap-2">
+        <input
+          type="email"
+          placeholder="Enter your email"
+          className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
+          aria-label="Email for ChatGPT notification"
+        />
+        <button
+          type="button"
+          className={cn(buttonVariants({ variant: 'default', size: 'default' }), 'shrink-0')}
+        >
+          Notify me
+        </button>
+      </div>
+    </div>
   );
 }
 
 export function HomePage() {
+  const [selectedPlatform, setSelectedPlatform] = useState<Platform>('openclaw');
+
   return (
     <>
-      <main className={cn(marketingBackgroundClassName, 'flex min-h-screen flex-col')}>
+      <main className={cn(marketingBackgroundClassName, 'flex flex-col')}>
         <MarketingBackground />
 
         {/* Hero Section */}
-        <div className="relative px-6 pt-12 pb-10 md:px-12 md:pt-20 md:pb-16">
-          <div className="mx-auto flex max-w-2xl flex-col items-center gap-7 text-center">
+        <section aria-label="Hero" className="relative flex min-h-[calc(100vh-60px)] items-center px-6 pt-12 pb-10 md:px-12 md:pt-20 md:pb-16">
+          <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center">
             <Image
               src="/todo4-logo.png"
               alt="Todo4 logo"
               width={240}
               height={240}
-              className="h-[18rem] w-[18rem] drop-shadow-[0_20px_40px_rgba(124,58,237,0.25)] md:h-[22rem] md:w-[22rem]"
+              className="h-[12rem] w-[12rem] drop-shadow-[0_20px_40px_rgba(124,58,237,0.25)] md:h-[14rem] md:w-[14rem]"
               unoptimized
               priority
             />
-            <h1 className="text-4xl font-bold tracking-[-0.02em] text-foreground md:text-6xl md:leading-[1.05]">
-              AI does the work.<br />You stay in control.
+            <h1 className="text-4xl font-bold tracking-[-0.02em] text-foreground md:text-5xl md:leading-[1.05]">
+              Your agent&rsquo;s task manager.
             </h1>
-            <p className="max-w-lg text-lg text-muted-foreground leading-relaxed md:text-xl">
-              Finally, a task manager that speaks AI. Your agent plans, prioritises, and
-              executes — so you can focus on what actually matters.
+            <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
+              Connect your AI agent. It handles the tasks. You review what matters.
             </p>
-            <div className="mt-2 flex flex-col items-center gap-3">
-              <Link
-                href="/login"
-                className={cn(buttonVariants({ variant: 'gradient' }), 'h-12 px-8 text-base font-semibold sm:min-w-56')}
-              >
-                Start for free
-              </Link>
-              <span className="text-xs text-muted-foreground">
-                No credit card · 60-second setup
-              </span>
-            </div>
-          </div>
-        </div>
 
-        {/* Product Screenshots Carousel */}
-        <ScreenshotCarousel />
-
-
-        {/* Features Section */}
-        <section aria-label="Platform features" className="w-full px-4 py-20 md:py-28">
-          <div className="mx-auto max-w-4xl">
-            <h2 className="mb-14 text-center text-3xl font-bold tracking-[-0.02em] text-foreground md:text-4xl">
-              Built for the way AI works
-            </h2>
-
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {features.map((feature) => (
-                <div
-                  key={feature.title}
-                  className="group rounded-xl border border-border bg-card p-7 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+            {/* Platform badges */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {platforms.map((p) => (
+                <span
+                  key={p.id}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transition-none"
                 >
-                  <div className="mb-4 inline-flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary/15">
-                    <feature.icon className="size-5" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground">{feature.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </div>
+                  <Image
+                    src={p.logo}
+                    alt={`${p.name} logo`}
+                    width={32}
+                    height={32}
+                    className="size-5 rounded object-contain"
+                    unoptimized
+                  />
+                  {p.name}
+                </span>
               ))}
             </div>
 
-            <div className="mt-14 text-center">
+            {/* CTAs */}
+            <div className="mt-2 flex flex-col items-center gap-3">
               <Link
-                href="/login"
-                className={cn(buttonVariants({ variant: 'gradient' }), 'h-12 px-8 text-base font-semibold sm:min-w-56')}
+                href="/register"
+                className={cn(
+                  buttonVariants({ variant: 'gradient' }),
+                  'h-12 px-8 text-base font-semibold sm:min-w-56',
+                )}
               >
-                Start for free
+                Get Started Free
+              </Link>
+              <Link href="/login" className="text-sm text-muted-foreground transition-colors hover:text-foreground">
+                Already have an account? Sign in
               </Link>
             </div>
           </div>
         </section>
 
-        {/* Supported Platforms Section */}
-        <section aria-label="Supported platforms" className="w-full border-t border-border px-4 py-20 md:py-28">
-          <div className="mx-auto max-w-4xl text-center">
-            <h2 className="mb-14 text-3xl font-bold tracking-[-0.02em] text-foreground md:text-4xl">
-              Works with your favourite agents
+        {/* Getting Started Section */}
+        <section aria-label="Getting started" className="w-full border-t border-border px-4 py-20 md:py-28">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="mb-14 text-center text-3xl font-bold tracking-[-0.02em] text-foreground md:text-4xl">
+            Get started in 3 steps
+          </h2>
+
+          {/* Steps — vertical mobile, 5-col grid on desktop (step–line–step–line–step) */}
+          <div className="flex flex-col gap-0 md:grid md:grid-cols-[1fr_4rem_1fr_4rem_1fr] md:items-start md:gap-0">
+
+            {/* Step 1: Pick your platform */}
+            <div className="flex flex-col items-center text-center md:items-start md:text-left">
+              <div className="mb-4 flex items-center gap-2">
+                <StepBadge number={1} />
+                <h3 className="text-lg font-semibold text-foreground">Pick your platform</h3>
+              </div>
+              <div className="flex w-full flex-col gap-3">
+                {platforms.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    disabled={p.disabled}
+                    onClick={() => !p.disabled && setSelectedPlatform(p.id)}
+                    className={cn(
+                      'group flex items-center gap-3 rounded-xl border p-4 text-left shadow-sm transition-all duration-200 motion-reduce:transition-none',
+                      p.disabled
+                        ? 'cursor-not-allowed border-border bg-card opacity-50'
+                        : selectedPlatform === p.id
+                          ? 'border-primary bg-primary/5 shadow-md'
+                          : 'border-border bg-card hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md',
+                    )}
+                    aria-pressed={selectedPlatform === p.id}
+                  >
+                    <Image
+                      src={p.logo}
+                      alt={`${p.name} logo`}
+                      width={48}
+                      height={48}
+                      className="size-10 rounded-lg object-contain"
+                      unoptimized
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-foreground">{p.name}</span>
+                      <span className="block text-xs text-zinc-600">{p.tagline}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <StepConnector />
+
+            {/* Step 2: Connect */}
+            <div className="flex flex-col items-center md:items-start">
+              <div className="mb-4 flex items-center gap-2">
+                <StepBadge number={2} />
+                <h3 className="text-lg font-semibold text-foreground">Connect</h3>
+              </div>
+              <div className="w-full">
+                <Step2Content platform={selectedPlatform} />
+              </div>
+            </div>
+
+            <StepConnector />
+
+            {/* Step 3: Try your first task */}
+            <div className="flex flex-col items-center md:items-start">
+              <div className="mb-4 flex items-center gap-2">
+                <StepBadge number={3} />
+                <h3 className="text-lg font-semibold text-foreground">Ask your agent</h3>
+              </div>
+              <div className="w-full">
+                {/* Chat bubble */}
+                <div className="mb-4 rounded-2xl rounded-bl-sm border border-primary/20 bg-primary/5 px-4 py-3">
+                  <p className="text-sm font-medium text-foreground">
+                    &ldquo;Create a task to review the Q2 report by Friday&rdquo;
+                  </p>
+                </div>
+
+                {/* Task mock-up */}
+                <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="size-4 rounded border border-border" aria-hidden="true" />
+                      <span className="text-sm font-medium text-foreground">Review the Q2 report</span>
+                    </div>
+                    <span className="shrink-0 text-xs text-zinc-600">Due Friday</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">
+                      <Bot className="size-3" /> Created by Claude
+                    </span>
+                  </div>
+                </div>
+
+                <p className="mt-3 text-center text-sm text-zinc-600 md:text-left">
+                  Your agent creates. You see it instantly.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+        {/* Trust Section */}
+        <section aria-label="Why todo4" className="w-full border-t border-border px-4 py-20 md:py-28">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-12 text-center text-3xl font-bold tracking-[-0.02em] text-foreground md:text-4xl">
+              Built different
             </h2>
 
-            <div className="flex flex-wrap items-center justify-center gap-5 md:gap-6">
-              {platforms.map((platform) => (
-                <div
-                  key={platform.name}
-                  className="group flex w-[160px] flex-col items-center gap-4 rounded-xl border border-border bg-card px-6 py-7 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
-                >
-                  <Image
-                    src={platform.logo}
-                    alt={`${platform.name} logo`}
-                    width={64}
-                    height={64}
-                    className="size-16 rounded-xl object-contain transition-transform duration-300 group-hover:scale-105"
-                    unoptimized
-                  />
-                  <span className="text-sm font-medium text-foreground">
-                    {platform.name}
-                  </span>
+            <div className="flex flex-col gap-8">
+              {trustBlocks.map((block) => (
+                <div key={block.title} className="flex items-start gap-4">
+                  <div
+                    className={cn(
+                      'flex size-10 shrink-0 items-center justify-center rounded-lg',
+                      block.iconBg,
+                    )}
+                  >
+                    <block.icon className={cn('size-5', block.iconColor)} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">{block.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-zinc-600">
+                      {block.description}
+                    </p>
+                  </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-12 text-center">
+              <Link
+                href="/register"
+                className={cn(
+                  buttonVariants({ variant: 'gradient' }),
+                  'h-12 px-8 text-base font-semibold sm:min-w-56',
+                )}
+              >
+                Start for free
+              </Link>
             </div>
           </div>
         </section>

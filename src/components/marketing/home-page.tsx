@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { MarketingBackground, marketingBackgroundClassName } from './marketing-background';
 import { MarketingFooter } from './marketing-footer';
 
-const MCP_URL = (process.env.NEXT_PUBLIC_MCP_URL ?? '').trim() || 'https://todo4.com/mcp';
+const MCP_URL = (process.env.NEXT_PUBLIC_MCP_URL ?? '').trim() || 'https://todo4.io/mcp';
 
 type Platform = 'openclaw' | 'claude' | 'chatgpt';
 
@@ -65,7 +65,7 @@ const trustBlocks = [
   },
 ] as const;
 
-function CopyButton({ text }: { text: string }) {
+function CopyButton({ text, className }: { text: string; className?: string }) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -97,7 +97,7 @@ function CopyButton({ text }: { text: string }) {
     <button
       type="button"
       onClick={handleCopy}
-      className="absolute top-3 right-3 rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+      className={cn("rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200", className ?? "absolute top-3 right-3")}
       aria-label="Copy to clipboard"
     >
       {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
@@ -123,12 +123,6 @@ function StepConnector({ className }: { className?: string }) {
 }
 
 function Step2Content({ platform }: { platform: Platform }) {
-  const mcpConfig = JSON.stringify(
-    { mcpServers: { todo4: { url: MCP_URL } } },
-    null,
-    2,
-  );
-
   if (platform === 'openclaw') {
     return (
       <div>
@@ -151,14 +145,23 @@ function Step2Content({ platform }: { platform: Platform }) {
   if (platform === 'claude') {
     return (
       <div>
-        <h4 className="mb-3 text-base font-semibold text-foreground">Add to your MCP config</h4>
-        <div className="relative rounded-lg bg-zinc-900 p-4 pr-12 font-mono text-sm text-zinc-100">
-          <CopyButton text={mcpConfig} />
-          <pre className="overflow-x-auto">{mcpConfig}</pre>
+        <h4 className="mb-3 text-base font-semibold text-foreground">Add a custom connector</h4>
+        <div className="flex flex-col gap-3">
+          <div className="rounded-lg border border-border bg-card p-3">
+            <span className="block text-xs font-medium text-zinc-600 mb-1">Name</span>
+            <span className="text-sm font-medium text-foreground">Todo4</span>
+          </div>
+          <div className="rounded-lg border border-border bg-card p-3">
+            <span className="block text-xs font-medium text-zinc-600 mb-1">Remote MCP server URL</span>
+            <div className="flex items-center gap-2">
+              <code className="text-sm font-mono text-foreground">{MCP_URL}</code>
+              <CopyButton text={MCP_URL} className="shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground" />
+            </div>
+          </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-          Paste into your Claude Desktop or Claude Code MCP config. OAuth will prompt on first
-          connection.
+          Go to Customize &rarr; Connectors &rarr; Add custom connector.
+          OAuth will prompt on first use.
         </p>
         <p className="mt-1 text-xs text-zinc-600">
           Works with Claude Desktop, Claude Code, and any MCP-compatible client.

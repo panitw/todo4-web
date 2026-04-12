@@ -1,13 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { login, resendVerificationEmail } from '@/lib/api/auth';
+import { login, resendVerificationEmail, requestLoginOtp, verifyLoginOtp } from '@/lib/api/auth';
 
-type ApiError = Error & { code?: string };
+type ApiError = Error & {
+  code?: string;
+  details?: { retryAfterSeconds?: number };
+};
+
+function formatRetryAfterMessage(baseMessage: string, apiErr: ApiError): string {
+  const retryAfterSeconds = apiErr.details?.retryAfterSeconds;
+  if (typeof retryAfterSeconds === 'number' && retryAfterSeconds > 0) {
+    return `${baseMessage} Try again in ${retryAfterSeconds} seconds.`;
+  }
+  return baseMessage;
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -20,6 +31,23 @@ export function LoginForm() {
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [resendError, setResendError] = useState(false);
+
+  // OTP login state
+  const [authMode, setAuthMode] = useState<'password' | 'email-code'>('password');
+  const [otpStep, setOtpStep] = useState<'email' | 'code-sent'>('email');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [resendOtpStatus, setResendOtpStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const otpInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus OTP input when entering code-sent step
+  useEffect(() => {
+    if (authMode === 'email-code' && otpStep === 'code-sent') {
+      otpInputRef.current?.focus();
+    }
+  }, [authMode, otpStep]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,6 +71,10 @@ export function LoginForm() {
         setError('Please verify your email.');
       } else if (apiErr.code === 'invalid_credentials') {
         setError('Invalid email or password.');
+      } else if (apiErr.code === 'passwordless_account_use_otp_login') {
+        setAuthMode('email-code');
+        setOtpStep('email');
+        setError('This account uses email code login.');
       } else {
         setError(apiErr.message ?? 'Login failed. Please try again.');
       }
@@ -60,6 +92,73 @@ export function LoginForm() {
     } catch {
       setResendStatus('idle');
       setResendError(true);
+    }
+  }
+
+  async function handleSendOtp(e?: React.FormEvent) {
+    e?.preventDefault();
+    setOtpError(null);
+    setIsSendingOtp(true);
+    try {
+      await requestLoginOtp(email);
+      setOtpStep('code-sent');
+      setOtpCode('');
+    } catch (err) {
+      const apiErr = err as ApiError;
+      if (apiErr.code === 'otp_request_rate_limited') {
+        setOtpError(
+          formatRetryAfterMessage('Too many requests. Please try again later.', apiErr),
+        );
+      } else {
+        setOtpError(apiErr.message ?? 'Failed to send code. Please try again.');
+      }
+    } finally {
+      setIsSendingOtp(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setOtpError(null);
+    setIsVerifyingOtp(true);
+    try {
+      await verifyLoginOtp(email, otpCode);
+      const next = searchParams.get('next');
+      const destination =
+        next && next.startsWith('/') && !/^\/[/\\]/.test(next) ? next : '/tasks';
+      router.replace(destination);
+    } catch (err) {
+      const apiErr = err as ApiError;
+      if (apiErr.code === 'invalid_or_expired_code') {
+        setOtpError('Invalid or expired code. Please try again.');
+      } else if (apiErr.code === 'too_many_requests') {
+        setOtpError('Too many attempts. Please try again later.');
+      } else {
+        setOtpError(apiErr.message ?? 'Verification failed. Please try again.');
+      }
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  }
+
+  async function handleResendOtp() {
+    setResendOtpStatus('sending');
+    setOtpError(null);
+    try {
+      await requestLoginOtp(email);
+      setResendOtpStatus('sent');
+      setOtpCode('');
+      otpInputRef.current?.focus();
+    } catch (err) {
+      const apiErr = err as ApiError;
+      setResendOtpStatus('idle');
+      if (apiErr.code === 'otp_request_rate_limited') {
+        setOtpError(
+          formatRetryAfterMessage('Too many requests. Please try again later.', apiErr),
+        );
+      } else {
+        setOtpError('Failed to resend code. Please try again.');
+      }
     }
   }
 
@@ -135,75 +234,208 @@ export function LoginForm() {
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      {/* Email/password form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium">
-            Email
-          </label>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => { setEmail(e.target.value); setIsEmailNotVerified(false); setResendStatus('idle'); setResendError(false); }}
-            placeholder="you@example.com"
-          />
-        </div>
+      {/* Auth mode toggle */}
+      <div className="flex rounded-lg border border-border overflow-hidden">
+        <button
+          type="button"
+          className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
+            authMode === 'password'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-transparent text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => { setAuthMode('password'); setError(null); setOtpError(null); }}
+        >
+          Email &amp; password
+        </button>
+        <button
+          type="button"
+          className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
+            authMode === 'email-code'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-transparent text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => { setAuthMode('email-code'); setError(null); setOtpError(null); }}
+        >
+          Email code
+        </button>
+      </div>
 
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
+      {/* Password login form */}
+      {authMode === 'password' && (
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="email" className="text-sm font-medium">
+              Email
             </label>
-            <Link href="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
-            </Link>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setIsEmailNotVerified(false); setResendStatus('idle'); setResendError(false); }}
+              placeholder="you@example.com"
+            />
           </div>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => { setPassword(e.target.value); setIsEmailNotVerified(false); setResendStatus('idle'); setResendError(false); }}
-            placeholder="••••••••"
-          />
-        </div>
 
-        {error && (
-          <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
-            {isEmailNotVerified && (
-              <>
-                {' '}
-                {resendStatus === 'sent' ? (
-                  <span className="text-muted-foreground">Verification email sent.</span>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleResend}
-                      disabled={resendStatus === 'sending'}
-                      className="underline hover:no-underline disabled:opacity-50"
-                    >
-                      {resendStatus === 'sending' ? 'Sending…' : 'Resend verification email'}
-                    </button>
-                    {resendError && (
-                      <span className="ml-1">Failed to send. Try again.</span>
-                    )}
-                  </>
-                )}
-              </>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
+              <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                Forgot password?
+              </Link>
+            </div>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setIsEmailNotVerified(false); setResendStatus('idle'); setResendError(false); }}
+              placeholder="••••••••"
+            />
+          </div>
+
+          {error && (
+            <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+              {isEmailNotVerified && (
+                <>
+                  {' '}
+                  {resendStatus === 'sent' ? (
+                    <span className="text-muted-foreground">Verification email sent.</span>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={handleResend}
+                        disabled={resendStatus === 'sending'}
+                        className="underline hover:no-underline disabled:opacity-50"
+                      >
+                        {resendStatus === 'sending' ? 'Sending...' : 'Resend verification email'}
+                      </button>
+                      {resendError && (
+                        <span className="ml-1">Failed to send. Try again.</span>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Signing in...' : 'Sign in'}
+          </Button>
+        </form>
+      )}
+
+      {/* Email code login flow */}
+      {authMode === 'email-code' && otpStep === 'email' && (
+        <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="otp-email" className="text-sm font-medium">
+              Email
+            </label>
+            <Input
+              id="otp-email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setOtpError(null); }}
+              placeholder="you@example.com"
+            />
+          </div>
+
+          {otpError && (
+            <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {otpError}
+            </div>
+          )}
+
+          {error && authMode === 'email-code' && (
+            <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isSendingOtp || !email}>
+            {isSendingOtp ? 'Sending...' : 'Send code'}
+          </Button>
+
+          <button
+            type="button"
+            className="text-sm text-primary hover:underline text-center"
+            onClick={() => { setAuthMode('password'); setError(null); setOtpError(null); }}
+          >
+            Sign in with password instead
+          </button>
+        </form>
+      )}
+
+      {authMode === 'email-code' && otpStep === 'code-sent' && (
+        <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            Enter the 6-digit code sent to <strong className="text-foreground">{email}</strong>
+          </p>
+
+          <button
+            type="button"
+            className="text-sm text-primary hover:underline text-left"
+            onClick={() => { setOtpStep('email'); setOtpCode(''); setOtpError(null); }}
+          >
+            &larr; Use a different email
+          </button>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="otp-code" className="text-sm font-medium">
+              Verification code
+            </label>
+            <Input
+              ref={otpInputRef}
+              id="otp-code"
+              type="text"
+              maxLength={6}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="one-time-code"
+              autoFocus
+              required
+              value={otpCode}
+              onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, '')); setOtpError(null); }}
+              placeholder="000000"
+            />
+          </div>
+
+          {otpError && (
+            <div role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {otpError}
+            </div>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isVerifyingOtp || otpCode.length < 6}>
+            {isVerifyingOtp ? 'Verifying...' : 'Verify'}
+          </Button>
+
+          <div className="text-center text-sm">
+            {resendOtpStatus === 'sent' ? (
+              <span className="text-muted-foreground">Code resent.</span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendOtpStatus === 'sending'}
+                className="text-primary hover:underline disabled:opacity-50"
+              >
+                {resendOtpStatus === 'sending' ? 'Sending...' : 'Resend code'}
+              </button>
             )}
           </div>
-        )}
-
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? 'Signing in…' : 'Sign in'}
-        </Button>
-      </form>
+        </form>
+      )}
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{' '}

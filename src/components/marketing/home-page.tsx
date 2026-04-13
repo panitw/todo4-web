@@ -24,9 +24,9 @@ const platforms = [
   },
   {
     id: 'claude' as Platform,
-    name: 'Claude',
+    name: 'Claude Cowork',
     logo: '/claude.svg',
-    tagline: 'Paste the MCP config',
+    tagline: 'Add a custom connector',
     disabled: false,
   },
   {
@@ -124,19 +124,23 @@ function StepConnector({ className }: { className?: string }) {
 
 function Step2Content({ platform }: { platform: Platform }) {
   if (platform === 'openclaw') {
+    const installPrompt = 'Install and set me up with Todo4: https://github.com/panitw/todo4-onboard-skill';
     return (
       <div>
-        <h4 className="mb-3 text-base font-semibold text-foreground">Say it in chat</h4>
+        <h4 className="mb-3 text-base font-semibold text-foreground">Paste this in chat</h4>
         <div className="rounded-lg bg-zinc-900 p-4 font-mono text-sm text-zinc-100">
-          &ldquo;Set me up with Todo4&rdquo;
+          <div className="flex items-start justify-between gap-3">
+            <span className="break-all">{installPrompt}</span>
+            <CopyButton text={installPrompt} className="shrink-0 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" />
+          </div>
         </div>
         <p className="mt-3 text-sm leading-relaxed text-zinc-600">
-          The <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">/todo4-onboard</code> skill
-          handles everything &mdash; account, verification, and agent connection. No browser needed.
+          OpenClaw installs the <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">/todo4-onboard</code> skill
+          from GitHub, then runs it &mdash; account, verification, and agent connection. No browser needed.
         </p>
         <p className="mt-2 text-xs text-zinc-600">
-          Or install manually:{' '}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono">openclaw install /todo4-onboard</code>
+          Already installed? Just say{' '}
+          <code className="rounded bg-muted px-1 py-0.5 font-mono">&ldquo;Set me up with Todo4&rdquo;</code>.
         </p>
       </div>
     );
@@ -350,7 +354,7 @@ export function HomePage() {
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">
-                      <Bot className="size-3" /> Created by Claude
+                      <Bot className="size-3" /> Created by Claude Cowork
                     </span>
                   </div>
                 </div>

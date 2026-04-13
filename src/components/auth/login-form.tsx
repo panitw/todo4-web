@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { login, resendVerificationEmail, requestLoginOtp, verifyLoginOtp } from '@/lib/api/auth';
@@ -33,13 +34,14 @@ export function LoginForm() {
   const [resendError, setResendError] = useState(false);
 
   // OTP login state
-  const [authMode, setAuthMode] = useState<'password' | 'email-code'>('password');
+  const [authMode, setAuthMode] = useState<'password' | 'email-code'>('email-code');
   const [otpStep, setOtpStep] = useState<'email' | 'code-sent'>('email');
   const [otpCode, setOtpCode] = useState('');
   const [otpError, setOtpError] = useState<string | null>(null);
   const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
-  const [resendOtpStatus, setResendOtpStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const otpInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus OTP input when entering code-sent step
@@ -48,6 +50,15 @@ export function LoginForm() {
       otpInputRef.current?.focus();
     }
   }, [authMode, otpStep]);
+
+  // Countdown tick for resend cooldown
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => {
+      setResendCooldown((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -103,6 +114,7 @@ export function LoginForm() {
       await requestLoginOtp(email);
       setOtpStep('code-sent');
       setOtpCode('');
+      setResendCooldown(60);
     } catch (err) {
       const apiErr = err as ApiError;
       if (apiErr.code === 'otp_request_rate_limited') {
@@ -142,23 +154,28 @@ export function LoginForm() {
   }
 
   async function handleResendOtp() {
-    setResendOtpStatus('sending');
+    setIsResendingOtp(true);
     setOtpError(null);
     try {
       await requestLoginOtp(email);
-      setResendOtpStatus('sent');
       setOtpCode('');
+      setResendCooldown(60);
       otpInputRef.current?.focus();
     } catch (err) {
       const apiErr = err as ApiError;
-      setResendOtpStatus('idle');
       if (apiErr.code === 'otp_request_rate_limited') {
+        const retryAfter = apiErr.details?.retryAfterSeconds;
+        if (typeof retryAfter === 'number' && retryAfter > 0) {
+          setResendCooldown(retryAfter);
+        }
         setOtpError(
           formatRetryAfterMessage('Too many requests. Please try again later.', apiErr),
         );
       } else {
         setOtpError('Failed to resend code. Please try again.');
       }
+    } finally {
+      setIsResendingOtp(false);
     }
   }
 
@@ -226,6 +243,17 @@ export function LoginForm() {
         <button
           type="button"
           className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
+            authMode === 'email-code'
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-transparent text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => { setAuthMode('email-code'); setError(null); setOtpError(null); }}
+        >
+          Email OTP
+        </button>
+        <button
+          type="button"
+          className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
             authMode === 'password'
               ? 'bg-primary text-primary-foreground'
               : 'bg-transparent text-muted-foreground hover:text-foreground'
@@ -233,17 +261,6 @@ export function LoginForm() {
           onClick={() => { setAuthMode('password'); setError(null); setOtpError(null); }}
         >
           Email &amp; password
-        </button>
-        <button
-          type="button"
-          className={`flex-1 px-3 py-1.5 text-sm font-medium transition-colors ${
-            authMode === 'email-code'
-              ? 'bg-primary text-primary-foreground'
-              : 'bg-transparent text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => { setAuthMode('email-code'); setError(null); setOtpError(null); }}
-        >
-          Email code
         </button>
       </div>
 
@@ -313,7 +330,7 @@ export function LoginForm() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
+          <Button type="submit" variant="gradient" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
         </form>
@@ -349,7 +366,7 @@ export function LoginForm() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isSendingOtp || !email}>
+          <Button type="submit" variant="gradient" className="w-full" disabled={isSendingOtp || !email}>
             {isSendingOtp ? 'Sending...' : 'Send code'}
           </Button>
 
@@ -371,10 +388,11 @@ export function LoginForm() {
 
           <button
             type="button"
-            className="text-sm text-primary hover:underline text-left"
+            className="inline-flex items-center gap-1.5 self-start text-sm text-primary hover:underline"
             onClick={() => { setOtpStep('email'); setOtpCode(''); setOtpError(null); }}
           >
-            &larr; Use a different email
+            <ArrowLeft size={16} />
+            Use a different email
           </button>
 
           <div className="flex flex-col gap-1.5">
@@ -403,23 +421,23 @@ export function LoginForm() {
             </div>
           )}
 
-          <Button type="submit" className="w-full" disabled={isVerifyingOtp || otpCode.length < 6}>
+          <Button type="submit" variant="gradient" className="w-full" disabled={isVerifyingOtp || otpCode.length < 6}>
             {isVerifyingOtp ? 'Verifying...' : 'Verify'}
           </Button>
 
           <div className="text-center text-sm">
-            {resendOtpStatus === 'sent' ? (
-              <span className="text-muted-foreground">Code resent.</span>
-            ) : (
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                disabled={resendOtpStatus === 'sending'}
-                className="text-primary hover:underline disabled:opacity-50"
-              >
-                {resendOtpStatus === 'sending' ? 'Sending...' : 'Resend code'}
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={isResendingOtp || resendCooldown > 0}
+              className="text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
+            >
+              {isResendingOtp
+                ? 'Sending...'
+                : resendCooldown > 0
+                  ? `Resend code in ${resendCooldown}s`
+                  : 'Resend code'}
+            </button>
           </div>
         </form>
       )}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { ChevronLeft, Copy, Check } from 'lucide-react'
+import { ChevronLeft, Copy, Check, TriangleAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { type Platform, PLATFORMS } from './platform-card'
 
@@ -22,6 +22,8 @@ interface PlatformConfig {
   /** Ordered setup steps */
   steps: Step[]
   note?: string
+  /** Prominent warning banner shown above the copy box */
+  warning?: { title: string; body: string }
 }
 
 const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
@@ -41,12 +43,16 @@ const PLATFORM_CONFIGS: Record<Platform, PlatformConfig> = {
     showCopyBox: true,
     copyValue: MCP_URL,
     copyLabel: 'MCP Server URL',
+    warning: {
+      title: 'ChatGPT support is experimental and not reliable',
+      body: 'Custom MCP servers only work in ChatGPT Developer mode today, and we have seen the connector fail to invoke tools or stay authorized across sessions. Try at your own risk \u2014 if you want a stable experience, use Claude, Gemini, or OpenClaw instead.',
+    },
     steps: [
-      { text: 'Open ChatGPT \u2192 Settings \u2192 Apps & Connectors' },
-      { text: 'Under Advanced settings, enable Developer Mode' },
-      { text: 'Click "Add new connector"' },
-      { text: 'Set name to "todo4", paste the URL above, and set auth to OAuth' },
-      { text: 'Click "Create" and authorize when prompted' },
+      { text: 'Open ChatGPT \u2192 Settings \u2192 Apps & Connectors \u2192 Advanced settings' },
+      { text: 'Toggle on Developer mode (Elevated risk) and click "Create app"' },
+      { text: 'Enter "Todo4" as the name and paste the URL above as the MCP Server URL' },
+      { text: 'Leave Authentication as OAuth, check "I understand and want to continue", then click "Create"' },
+      { text: 'Authorize todo4 when your browser opens' },
     ],
     note: 'Developer Mode is in beta for Pro, Plus, Business, Enterprise, and Education plans.',
   },
@@ -153,6 +159,19 @@ export function ConfigStep({ platform, onBack, onNext }: ConfigStepProps) {
 
       {/* Live region for copy announcements (shared with CodeSnippets) */}
       <div ref={liveRef} aria-live="polite" className="sr-only" />
+
+      {config.warning && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4"
+        >
+          <TriangleAlert className="size-5 shrink-0 text-amber-600" aria-hidden="true" />
+          <div className="text-sm">
+            <div className="font-semibold text-amber-900 dark:text-amber-200">{config.warning.title}</div>
+            <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">{config.warning.body}</p>
+          </div>
+        </div>
+      )}
 
       {/* Copy box — GUI platforms only */}
       {config.showCopyBox && (

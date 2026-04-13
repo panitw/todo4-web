@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bot, ShieldCheck, Bell, Copy, Check, ArrowRight } from 'lucide-react';
+import { Bot, ShieldCheck, Bell, Copy, Check, ArrowRight, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -33,8 +33,8 @@ const platforms = [
     id: 'chatgpt' as Platform,
     name: 'ChatGPT',
     logo: '/chatgpt.png',
-    tagline: 'Coming soon',
-    disabled: true,
+    tagline: 'Experimental (Developer mode)',
+    disabled: false,
   },
 ] as const;
 
@@ -195,24 +195,35 @@ function Step2Content({ platform }: { platform: Platform }) {
   // chatgpt
   return (
     <div>
-      <h4 className="mb-3 text-base font-semibold text-foreground">Coming soon</h4>
-      <p className="text-sm text-zinc-600">
-        ChatGPT integration via OpenAI Apps SDK is in development. Sign up to get notified.
-      </p>
-      <div className="mt-4 flex gap-2">
-        <input
-          type="email"
-          placeholder="Enter your email"
-          className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/50"
-          aria-label="Email for ChatGPT notification"
-        />
-        <button
-          type="button"
-          className={cn(buttonVariants({ variant: 'default', size: 'default' }), 'shrink-0')}
-        >
-          Notify me
-        </button>
+      <div
+        role="alert"
+        className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3"
+      >
+        <TriangleAlert className="size-4 shrink-0 text-amber-600 mt-0.5" aria-hidden="true" />
+        <div className="text-xs leading-relaxed text-amber-900">
+          <strong className="font-semibold">Experimental — not reliable yet.</strong> ChatGPT
+          custom connectors only work in Developer mode and often fail to invoke tools. For a
+          stable experience, pick Claude or OpenClaw.
+        </div>
       </div>
+      <h4 className="mb-3 text-base font-semibold text-foreground">Create a developer app</h4>
+      <div className="flex flex-col gap-3">
+        <div className="rounded-lg border border-border bg-card p-3">
+          <span className="block text-xs font-medium text-zinc-600 mb-1">Name</span>
+          <span className="text-sm font-medium text-foreground">Todo4</span>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-3">
+          <span className="block text-xs font-medium text-zinc-600 mb-1">MCP Server URL</span>
+          <div className="flex items-center gap-2">
+            <code className="text-sm font-mono text-foreground">{MCP_URL}</code>
+            <CopyButton text={MCP_URL} className="shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground" />
+          </div>
+        </div>
+      </div>
+      <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+        Go to Settings &rarr; Apps &amp; Connectors &rarr; Advanced settings, enable Developer mode,
+        then click &ldquo;Create app&rdquo;. Accept the risk prompt and authorize Todo4.
+      </p>
     </div>
   );
 }

@@ -257,7 +257,7 @@ export function HomePage() {
             {/* CTAs */}
             <div className="mt-2 flex flex-col items-center gap-3">
               <Link
-                href="/register"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: 'gradient' }),
                   'h-12 px-8 text-base font-semibold sm:min-w-56',

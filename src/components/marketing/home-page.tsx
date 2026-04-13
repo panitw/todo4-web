@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Bot, ShieldCheck, Bell, Copy, Check } from 'lucide-react';
+import { Bot, ShieldCheck, Bell, Copy, Check, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -141,9 +141,10 @@ function Step2Content({ platform }: { platform: Platform }) {
         <p className="mt-3 text-sm">
           <Link
             href="/setup/openclaw"
-            className="font-medium text-primary underline-offset-2 hover:underline"
+            className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-2 hover:underline"
           >
-            Step-by-step setup guide &rarr;
+            Step-by-step setup guide
+            <ArrowRight size={16} />
           </Link>
         </p>
         <p className="mt-2 text-xs text-zinc-600">
@@ -178,9 +179,10 @@ function Step2Content({ platform }: { platform: Platform }) {
         <p className="mt-3 text-sm">
           <Link
             href="/setup/cowork"
-            className="font-medium text-primary underline-offset-2 hover:underline"
+            className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-2 hover:underline"
           >
-            Step-by-step setup guide &rarr;
+            Step-by-step setup guide
+            <ArrowRight size={16} />
           </Link>
         </p>
         <p className="mt-1 text-xs text-zinc-600">

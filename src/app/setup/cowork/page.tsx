@@ -59,7 +59,7 @@ export default function CoworkSetupPage() {
       </header>
 
       {/* Main content */}
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 pb-16">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 pb-16">
         {/* Hero */}
         <section>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">

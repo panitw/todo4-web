@@ -83,3 +83,16 @@ export async function confirmEmailChange(
     body: JSON.stringify({ token }),
   });
 }
+
+export interface ExchangeWebLoginCodeResult {
+  redirectTo: string;
+}
+
+export async function exchangeWebLoginCode(
+  code: string,
+): Promise<ExchangeWebLoginCodeResult> {
+  return apiFetch<ExchangeWebLoginCodeResult>('/api/v1/auth/code-exchange', {
+    method: 'POST',
+    body: JSON.stringify({ code }),
+  });
+}

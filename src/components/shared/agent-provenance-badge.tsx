@@ -19,12 +19,11 @@ export function AgentProvenanceBadge({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium',
-        'bg-[#ede9fe] text-[#6d28d9]',
+        'inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700',
         className,
       )}
     >
-      <Bot className="h-4 w-4" aria-hidden="true" />
+      <Bot className="size-3" aria-hidden="true" />
       <span>{label}</span>
     </span>
   );

@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useArchiveTask } from '@/hooks/use-archive-task';
 import { useRestoreTask } from '@/hooks/use-restore-task';
 import { useDeleteTask } from '@/hooks/use-delete-task';
+import { useAgents } from '@/hooks/use-agents';
 import { CloseTaskDialog } from './close-task-dialog';
 import { AgentProvenanceBadge } from '@/components/shared/agent-provenance-badge';
 import { STATUS_PILL_CONFIG } from './task-shared';
@@ -132,6 +133,12 @@ export function TaskCard({
   const inProgress = task.status === 'in_progress';
   const hasAgentTouch = task.agentNotes !== null;
   const hasAgentCreator = task.assignedAgentId !== null;
+
+  const { data: agents } = useAgents();
+  const creatorAgentName =
+    (hasAgentCreator &&
+      agents?.find((a) => a.id === task.assignedAgentId)?.name) ||
+    'Agent';
 
   const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -377,7 +384,10 @@ export function TaskCard({
 
             {/* Agent provenance badge */}
             {hasAgentCreator && (
-              <AgentProvenanceBadge agentName="Agent" variant="created" />
+              <AgentProvenanceBadge
+                agentName={creatorAgentName}
+                variant="created"
+              />
             )}
             </div>
           </div>

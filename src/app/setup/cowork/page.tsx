@@ -14,13 +14,13 @@ import { cn } from '@/lib/utils';
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL || 'https://todo4.io/mcp';
 
 export const metadata: Metadata = {
-  title: 'Connect Todo4 to Claude Cowork — Todo4',
+  title: 'Connect Todo4 to Claude — Todo4',
   description:
-    'Add Todo4 as a Custom Connector in Claude Cowork in under a minute. Step-by-step setup guide for the Todo4 MCP integration.',
+    'Add Todo4 as a Custom Connector in Claude in under a minute. Works in Claude Chat, Cowork, Code, and Desktop. Step-by-step setup guide for the Todo4 MCP integration.',
 };
 
 const steps = [
-  'In Claude Cowork, click the Customize icon in the sidebar.',
+  'In Claude, click the Customize icon in the sidebar.',
   'Select Connectors.',
   'Click Add custom connector.',
   'Name it "Todo4" and paste the URL above.',
@@ -63,11 +63,12 @@ export default function CoworkSetupPage() {
         {/* Hero */}
         <section>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Connect Todo4 to Claude Cowork
+            Connect Todo4 to Claude
           </h1>
           <p className="mt-3 text-base text-muted-foreground">
             Add Todo4 as a Custom Connector to let Claude create, query, and
-            update your tasks directly from chat. Takes about 30 seconds.
+            update your tasks directly from chat. Works in Claude Chat,
+            Cowork, Code, and Desktop. Takes about 30 seconds.
           </p>
         </section>
 
@@ -85,8 +86,8 @@ export default function CoworkSetupPage() {
             <strong className="font-semibold">
               Requires Claude Pro or Max.
             </strong>{' '}
-            Custom Connectors aren&apos;t available on the free tier of Claude
-            Cowork as of April 2026.
+            Custom Connectors aren&apos;t available on Claude&apos;s free tier
+            as of April 2026.
           </div>
         </aside>
 
@@ -96,8 +97,9 @@ export default function CoworkSetupPage() {
             Why the Custom Connector and not the plugin?
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Todo4 also ships as a Cowork plugin, but Cowork currently has a
-            known OAuth bug (
+            Todo4 also ships as a Claude Code plugin, but if you&apos;re
+            installing it through Cowork specifically there&apos;s a known
+            OAuth bug (
             <a
               href="https://github.com/anthropics/claude-code/issues/28695"
               target="_blank"
@@ -106,8 +108,9 @@ export default function CoworkSetupPage() {
             >
               anthropics/claude-code #28695
             </a>
-            ) that prevents plugin-supplied MCP servers from authenticating. The
-            Custom Connector path below works reliably end-to-end.
+            ) that prevents plugin-supplied MCP servers from authenticating.
+            The Custom Connector path below works reliably end-to-end across
+            every Claude client.
           </p>
         </section>
 
@@ -185,7 +188,7 @@ export default function CoworkSetupPage() {
           <div className="mt-4 space-y-5 text-sm text-foreground/90">
             <div>
               <h3 className="font-medium">
-                Tools stop working after a long conversation
+                Tools stop working after a long conversation (Cowork only)
               </h3>
               <p className="mt-1 text-muted-foreground">
                 Cowork has a known bug (
@@ -199,7 +202,7 @@ export default function CoworkSetupPage() {
                 </a>
                 ) where OAuth tokens get stripped during context compaction. If
                 Todo4 stops responding, re-add the connector or start a new
-                chat.
+                chat. Other Claude clients aren&apos;t affected.
               </p>
             </div>
             <div>
@@ -207,8 +210,10 @@ export default function CoworkSetupPage() {
                 The browser OAuth tab didn&apos;t open
               </h3>
               <p className="mt-1 text-muted-foreground">
-                Check your browser&apos;s popup blocker for claude.ai. Click{' '}
-                <strong>Add</strong> on the connector dialog again to retry.
+                Check your browser&apos;s popup blocker for the Claude domain
+                you&apos;re on (claude.ai for web/Cowork, or your Desktop app).
+                Click <strong>Add</strong> on the connector dialog again to
+                retry.
               </p>
             </div>
             <div>

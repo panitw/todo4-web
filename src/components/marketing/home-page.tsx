@@ -24,7 +24,7 @@ const platforms = [
   },
   {
     id: 'claude' as Platform,
-    name: 'Claude Cowork',
+    name: 'Claude',
     logo: '/claude.svg',
     tagline: 'Add a custom connector',
     disabled: false,
@@ -372,7 +372,7 @@ export function HomePage() {
                   </div>
                   <div className="mt-2 flex items-center gap-2">
                     <span className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 text-xs font-medium text-teal-700">
-                      <Bot className="size-3" /> Created by Claude Cowork
+                      <Bot className="size-3" /> Created by Claude
                     </span>
                   </div>
                 </div>

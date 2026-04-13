@@ -167,6 +167,14 @@ function Step2Content({ platform }: { platform: Platform }) {
           Go to Customize &rarr; Connectors &rarr; Add custom connector.
           OAuth will prompt on first use.
         </p>
+        <p className="mt-3 text-sm">
+          <Link
+            href="/setup/cowork"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Step-by-step setup guide &rarr;
+          </Link>
+        </p>
         <p className="mt-1 text-xs text-zinc-600">
           Works with Claude Desktop, Claude Code, and any MCP-compatible client.
         </p>

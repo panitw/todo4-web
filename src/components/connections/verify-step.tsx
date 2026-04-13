@@ -39,7 +39,7 @@ export function VerifyStep({ platform, onBack, onDone }: VerifyStepProps) {
           variant="ghost"
           size="icon"
           onClick={onBack}
-          aria-label="Back to configuration"
+          aria-label="Back to connect"
         >
           <ChevronLeft className="size-5" />
         </Button>

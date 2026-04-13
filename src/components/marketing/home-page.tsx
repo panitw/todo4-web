@@ -427,7 +427,7 @@ export function HomePage() {
 
             <div className="mt-12 text-center">
               <Link
-                href="/register"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: 'gradient' }),
                   'h-12 px-8 text-base font-semibold sm:min-w-56',

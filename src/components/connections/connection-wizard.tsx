@@ -45,10 +45,7 @@ export function ConnectionWizard({ onDone }: ConnectionWizardProps) {
   return (
     <div className="mx-auto w-full max-w-lg px-4 py-8 md:py-12">
       <div className="mb-8 text-center">
-        <h1 className="text-page-title font-semibold">Connect Your AI Agent</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Follow these steps to connect your AI agent to todo4
-        </p>
+        <h1 className="text-page-title font-semibold">Get started in 3 steps</h1>
       </div>
 
       <div className="mb-8">

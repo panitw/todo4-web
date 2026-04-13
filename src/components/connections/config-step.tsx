@@ -154,7 +154,7 @@ export function ConfigStep({ platform, onBack, onNext }: ConfigStepProps) {
         >
           <ChevronLeft className="size-5" />
         </Button>
-        <h2 className="text-lg font-semibold">Configure {info.name}</h2>
+        <h2 className="text-lg font-semibold">Connect {info.name}</h2>
       </div>
 
       {/* Live region for copy announcements (shared with CodeSnippets) */}

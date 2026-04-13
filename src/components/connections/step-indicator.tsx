@@ -3,7 +3,7 @@
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const STEP_NAMES = ['Select Platform', 'Configure', 'Verify'] as const
+const STEP_NAMES = ['Pick your platform', 'Connect', 'Ask your agent'] as const
 
 interface StepIndicatorProps {
   currentStep: 1 | 2 | 3

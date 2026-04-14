@@ -12,7 +12,7 @@ import { MarketingFooter } from './marketing-footer';
 
 const MCP_URL = (process.env.NEXT_PUBLIC_MCP_URL ?? '').trim() || 'https://todo4.io/mcp';
 
-type Platform = 'openclaw' | 'claude' | 'chatgpt';
+type Platform = 'openclaw' | 'claude' | 'hermes' | 'chatgpt';
 
 const platforms = [
   {
@@ -27,6 +27,13 @@ const platforms = [
     name: 'Claude',
     logo: '/claude.svg',
     tagline: 'Add a custom connector',
+    disabled: false,
+  },
+  {
+    id: 'hermes' as Platform,
+    name: 'Hermes',
+    logo: '/hermes.png',
+    tagline: 'Install the plugin',
     disabled: false,
   },
   {
@@ -187,6 +194,34 @@ function Step2Content({ platform }: { platform: Platform }) {
         </p>
         <p className="mt-1 text-xs text-zinc-600">
           Works with Claude Desktop, Claude Code, and any MCP-compatible client.
+        </p>
+      </div>
+    );
+  }
+
+  if (platform === 'hermes') {
+    const installCommand = 'hermes plugins install https://github.com/panitw/todo4-hermes-plugin';
+    return (
+      <div>
+        <h4 className="mb-3 text-base font-semibold text-foreground">Install the Hermes plugin</h4>
+        <div className="rounded-lg bg-zinc-900 p-4 font-mono text-sm text-zinc-100">
+          <div className="flex items-start justify-between gap-3">
+            <span className="break-all">{installCommand}</span>
+            <CopyButton text={installCommand} className="shrink-0 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" />
+          </div>
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
+          A few more commands wire everything up, then you connect your account
+          by email OTP from chat. No browser needed.
+        </p>
+        <p className="mt-3 text-sm">
+          <Link
+            href="/setup/hermes"
+            className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Step-by-step setup guide
+            <ArrowRight size={16} />
+          </Link>
         </p>
       </div>
     );

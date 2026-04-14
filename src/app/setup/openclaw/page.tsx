@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Sparkles, Terminal } from 'lucide-react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Plug,
+  Sparkles,
+  Terminal,
+} from 'lucide-react';
 import {
   MarketingBackground,
   marketingBackgroundClassName,
@@ -14,11 +20,12 @@ import { cn } from '@/lib/utils';
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL || 'https://todo4.io/mcp';
 const SKILL_PROMPT =
   'Install and set me up with Todo4: https://github.com/panitw/todo4-onboard-skill';
+const PLUGIN_SPEC = '@panitw/todo4-openclaw-plugin';
 
 export const metadata: Metadata = {
   title: 'Connect Todo4 to OpenClaw — Todo4',
   description:
-    'Connect Todo4 to OpenClaw in two ways: paste an install prompt in chat (recommended) or wire it up manually with MCPorter.',
+    'Connect Todo4 to OpenClaw three ways: paste an install prompt in chat, install the npm plugin, or wire it up manually with MCPorter.',
 };
 
 const skillSteps = [
@@ -26,6 +33,42 @@ const skillSteps = [
   'Paste the prompt above into a new chat.',
   'When asked, provide your email — Todo4 sends a 6-digit verification code.',
   'Paste the code back into chat. OpenClaw connects itself automatically (account, MCP config, and agent token are all wired up for you).',
+];
+
+const pluginSteps = [
+  {
+    text: 'Install the Todo4 plugin from npm.',
+    command: `openclaw plugins install ${PLUGIN_SPEC}`,
+  },
+  {
+    text: 'Restart the gateway so OpenClaw loads the plugin tools and the bundled onboarding skill.',
+    command: 'openclaw gateway restart',
+  },
+  {
+    text: 'In chat, ask the agent to onboard you. The bundled todo4-onboard skill walks you through email OTP, verifies the code, and wires up MCP automatically.',
+    note: (
+      <>
+        Try any of:
+        <ul className="mt-2 list-inside list-disc space-y-1">
+          <li>
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              &ldquo;Run the todo4-onboard skill&rdquo;
+            </code>
+          </li>
+          <li>
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              &ldquo;Set me up with Todo4&rdquo;
+            </code>
+          </li>
+          <li>
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              &ldquo;Sign me up for Todo4&rdquo;
+            </code>
+          </li>
+        </ul>
+      </>
+    ),
+  },
 ];
 
 const mcporterSteps = [
@@ -103,13 +146,14 @@ export default function OpenclawSetupPage() {
             Connect Todo4 to OpenClaw
           </h1>
           <p className="mt-3 text-base text-muted-foreground">
-            Two paths, same result: a chat-driven install (no terminal needed)
-            or a manual wiring with MCPorter for users who prefer the CLI.
+            Three paths, same result: a chat-driven skill install, an npm
+            plugin, or a manual wiring with MCPorter — pick whichever matches
+            how you already work.
           </p>
         </section>
 
         {/* Method picker callout */}
-        <section className="mt-8 grid gap-4 sm:grid-cols-2">
+        <section className="mt-8 grid gap-4 sm:grid-cols-3">
           <a
             href="#method-skill"
             className="group rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary"
@@ -130,6 +174,22 @@ export default function OpenclawSetupPage() {
             </p>
           </a>
           <a
+            href="#method-plugin"
+            className="group rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <Plug size={18} className="text-primary" aria-hidden="true" />
+              <h2 className="text-sm font-semibold">
+                Method 2 — Plugin (npm)
+              </h2>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Install an npm plugin that ships the onboarding tools and skill.
+              Two commands, then chat. Best if you&apos;d rather not paste a
+              prompt.
+            </p>
+          </a>
+          <a
             href="#method-mcporter"
             className="group rounded-lg border border-border bg-card p-4 transition-colors hover:border-primary"
           >
@@ -140,7 +200,7 @@ export default function OpenclawSetupPage() {
                 aria-hidden="true"
               />
               <h2 className="text-sm font-semibold">
-                Method 2 — MCPorter (CLI)
+                Method 3 — MCPorter (CLI)
               </h2>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
@@ -194,12 +254,59 @@ export default function OpenclawSetupPage() {
           </p>
         </section>
 
-        {/* Method 2 — MCPorter */}
+        {/* Method 2 — Plugin */}
+        <section id="method-plugin" className="mt-12 scroll-mt-8">
+          <div className="flex items-center gap-2">
+            <Plug size={20} className="text-primary" aria-hidden="true" />
+            <h2 className="text-xl font-semibold">
+              Method 2 — Install via Plugin
+            </h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The plugin{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              {PLUGIN_SPEC}
+            </code>{' '}
+            registers four Todo4 agent tools and installs a{' '}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              todo4-onboard
+            </code>{' '}
+            skill into <code>~/.openclaw/skills/</code>. After you restart the
+            gateway, just ask the agent to onboard you in chat.
+          </p>
+
+          <ol className="mt-6 space-y-5 text-sm text-foreground/90">
+            {pluginSteps.map((step, i) => (
+              <li key={i} className="leading-relaxed">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                    {i + 1}
+                  </span>
+                  <div className="flex-1">
+                    <p>{step.text}</p>
+                    {step.command && (
+                      <div className="mt-2">
+                        <CommandBlock command={step.command} />
+                      </div>
+                    )}
+                    {step.note && (
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {step.note}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* Method 3 — MCPorter */}
         <section id="method-mcporter" className="mt-12 scroll-mt-8">
           <div className="flex items-center gap-2">
             <Terminal size={20} className="text-primary" aria-hidden="true" />
             <h2 className="text-xl font-semibold">
-              Method 2 — Install via MCPorter
+              Method 3 — Install via MCPorter
             </h2>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">

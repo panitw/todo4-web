@@ -150,13 +150,9 @@ function Step2Content({ platform }: { platform: Platform }) {
             href="/setup/openclaw"
             className="inline-flex items-center gap-1.5 font-medium text-primary underline-offset-2 hover:underline"
           >
-            Step-by-step setup guide
+            More installation methods
             <ArrowRight size={16} />
           </Link>
-        </p>
-        <p className="mt-2 text-xs text-zinc-600">
-          Already installed? Just say{' '}
-          <code className="rounded bg-muted px-1 py-0.5 font-mono">&ldquo;Set me up with Todo4&rdquo;</code>.
         </p>
       </div>
     );

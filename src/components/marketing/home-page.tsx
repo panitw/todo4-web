@@ -261,6 +261,18 @@ function Step2Content({ platform }: { platform: Platform }) {
 
 export function HomePage() {
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>('openclaw');
+  const gettingStartedRef = useRef<HTMLElement>(null);
+
+  const handleHeroPlatformClick = (id: Platform) => {
+    setSelectedPlatform(id);
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    gettingStartedRef.current?.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  };
 
   return (
     <>
@@ -289,9 +301,13 @@ export function HomePage() {
             {/* Platform badges */}
             <div className="flex flex-wrap items-center justify-center gap-2">
               {platforms.map((p) => (
-                <span
+                <button
                   key={p.id}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 motion-reduce:transition-none"
+                  type="button"
+                  disabled={p.disabled}
+                  onClick={() => !p.disabled && handleHeroPlatformClick(p.id)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-transform duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+                  aria-label={`Jump to setup for ${p.name}`}
                 >
                   <Image
                     src={p.logo}
@@ -302,7 +318,7 @@ export function HomePage() {
                     unoptimized
                   />
                   {p.name}
-                </span>
+                </button>
               ))}
             </div>
 
@@ -325,7 +341,7 @@ export function HomePage() {
         </section>
 
         {/* Getting Started Section */}
-        <section aria-label="Getting started" className="w-full border-t border-border px-4 py-20 md:py-28">
+        <section ref={gettingStartedRef} aria-label="Getting started" className="w-full border-t border-border px-4 py-20 md:py-28">
         <div className="mx-auto max-w-5xl">
           <h2 className="mb-14 text-center text-3xl font-bold tracking-[-0.02em] text-foreground md:text-4xl">
             Get started in 3 steps

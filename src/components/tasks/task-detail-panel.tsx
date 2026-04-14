@@ -14,6 +14,7 @@ import { SubtaskPanel } from './subtask-panel';
 import { useRestoreTask } from '@/hooks/use-restore-task';
 import { useDeleteTask } from '@/hooks/use-delete-task';
 import { useTags } from '@/hooks/use-tags';
+import { useAgents } from '@/hooks/use-agents';
 import { CloseTaskDialog } from './close-task-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -127,12 +128,15 @@ function StatusTransitionBar({ task }: { task: Task }) {
 // ─── Agent Attribution Bar ──────────────────────────────────────────────────
 
 function AgentAttributionBar({ task }: { task: Task }) {
+  const { data: agents } = useAgents();
   if (!task.assignedAgentId) return null;
+  const agentName =
+    agents?.find((a) => a.id === task.assignedAgentId)?.name ?? 'Agent';
   const date = new Date(task.createdAt).toLocaleDateString();
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-teal-50 border-b border-teal-200 text-xs text-teal-800">
       <Bot className="h-3.5 w-3.5 shrink-0" />
-      <span>Created by <span className="font-medium">{task.assignedAgentId}</span> &middot; {date}</span>
+      <span>Created by <span className="font-medium">{agentName}</span> &middot; {date}</span>
     </div>
   );
 }

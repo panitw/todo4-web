@@ -1,7 +1,15 @@
 import { NextRequest } from 'next/server';
+import { Agent } from 'undici';
 
 const mcpUrl = () =>
   (process.env.MCP_URL || 'http://localhost:3002').replace(/\/$/, '');
+
+// undici's default bodyTimeout (5 min, max time between body chunks) terminates
+// idle SSE streams with UND_ERR_BODY_TIMEOUT — surfaced to the client as 502
+// "failed to pipe response". Disable bodyTimeout for the upstream MCP fetch so
+// long-lived SSE sessions stay open. headersTimeout stays at its default so a
+// dead upstream that never sends a status line still fails fast.
+const mcpDispatcher = new Agent({ bodyTimeout: 0 });
 
 // Only forward headers the MCP transport needs
 function mcpHeaders(req: NextRequest): Record<string, string> {
@@ -62,6 +70,9 @@ export async function POST(req: NextRequest): Promise<Response> {
     headers: mcpHeaders(req),
     body,
     cache: 'no-store',
+    signal: req.signal,
+    // @ts-expect-error - Node fetch supports undici dispatcher option
+    dispatcher: mcpDispatcher,
   });
 
   // SSE streams (text/event-stream) must be piped through, not buffered.
@@ -88,6 +99,9 @@ export async function GET(req: NextRequest): Promise<Response> {
     method: 'GET',
     headers: mcpHeaders(req),
     cache: 'no-store',
+    signal: req.signal,
+    // @ts-expect-error - Node fetch supports undici dispatcher option
+    dispatcher: mcpDispatcher,
   });
 
   // GET on /mcp with a session ID returns an SSE stream for server notifications.
@@ -114,6 +128,9 @@ export async function DELETE(req: NextRequest): Promise<Response> {
     method: 'DELETE',
     headers: mcpHeaders(req),
     cache: 'no-store',
+    signal: req.signal,
+    // @ts-expect-error - Node fetch supports undici dispatcher option
+    dispatcher: mcpDispatcher,
   });
 
   const responseBody = await res.text();

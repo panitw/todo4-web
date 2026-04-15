@@ -17,7 +17,7 @@ They're static assets served verbatim by Next.js out of `todo-web/public/.well-k
 | `assetlinks.json` | `REPLACE_WITH_PRODUCTION_SHA256_FINGERPRINT` | SHA-256 of the production EAS Build Android keystore |
 | `assetlinks.json` | `REPLACE_WITH_PREVIEW_SHA256_FINGERPRINT` | SHA-256 of the preview EAS Build Android keystore |
 
-The `com.todo4.mobile` bundle ID / package name is fixed per the mobile-app architecture shard and matches `app.config.ts` in `todo-mobile` (Story 18.9).
+The `io.todo4.mobile` bundle ID / package name is fixed per the mobile-app architecture shard and matches `app.config.ts` in `todo-mobile` (Story 18.9; updated 2026-04-15 from `com.todo4.mobile` to match the `todo4.io` domain).
 
 ## How to obtain the real values
 

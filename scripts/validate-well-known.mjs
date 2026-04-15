@@ -80,7 +80,7 @@ async function validateAssetlinks() {
   const hit = data.some((entry) => {
     const target = entry?.target
     if (!target || target.namespace !== 'android_app') return false
-    if (target.package_name !== 'com.todo4.mobile') return false
+    if (target.package_name !== 'io.todo4.mobile') return false
     const fps = target.sha256_cert_fingerprints
     if (!Array.isArray(fps) || fps.length === 0) return false
     return fps.every(isNonEmptyString)
@@ -88,7 +88,7 @@ async function validateAssetlinks() {
   if (!hit) {
     fail(
       file,
-      `no entry with target.package_name === "com.todo4.mobile" and a non-empty sha256_cert_fingerprints string array`,
+      `no entry with target.package_name === "io.todo4.mobile" and a non-empty sha256_cert_fingerprints string array`,
     )
   }
 }

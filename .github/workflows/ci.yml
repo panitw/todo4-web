@@ -33,6 +33,9 @@ jobs:
       - name: Run lint
         run: pnpm lint
 
+      - name: Validate .well-known files
+        run: pnpm validate:well-known
+
       # Unit tests will be added in Story 2.x when test suites are established
       # - name: Run tests
       #   run: pnpm test

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "validate:well-known": "node scripts/validate-well-known.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test"
   },

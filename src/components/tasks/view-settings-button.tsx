@@ -77,7 +77,7 @@ export function ViewSettingsButton({
                 <DropdownMenuItem
                   key={option.value}
                   disabled={sortDisabled}
-                  onSelect={() => onSort(option.value)}
+                  onClick={() => onSort(option.value)}
                 >
                   {option.label}
                 </DropdownMenuItem>

@@ -105,6 +105,19 @@ export async function bulkAction(input: BulkActionInput): Promise<BulkActionResu
   });
 }
 
+export type SortTasksBy = 'priority' | 'due_date' | 'created_newest' | 'created_oldest';
+
+export interface SortTasksResult {
+  updated: number;
+}
+
+export async function sortTasks(input: { by: SortTasksBy }): Promise<SortTasksResult> {
+  return apiFetch<SortTasksResult>('/api/v1/tasks/sort', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 export async function listTasks(params?: {
   page?: number;
   limit?: number;

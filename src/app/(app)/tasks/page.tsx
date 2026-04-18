@@ -50,7 +50,7 @@ import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 import { useSearch } from '@/providers/search-provider';
 import { useCreateTaskAction } from '@/providers/create-task-provider';
 import { buildVirtualItems, type VirtualItem, type VirtualTaskItem } from '@/lib/group-tasks';
-import type { Task } from '@/lib/api/tasks';
+import { sortTasks, type SortTasksBy, type Task } from '@/lib/api/tasks';
 
 const ONBOARDING_PROMPTS = [
   'Create a task called \'Review weekly goals\' with priority p2, due next Monday',
@@ -396,6 +396,26 @@ function TasksPageContent() {
     }));
   }, []);
 
+  // Auto-sort: POST /tasks/sort then invalidate ['tasks'] to refetch
+  const [isSortInFlight, setIsSortInFlight] = useState(false);
+  const handleSort = useCallback(
+    (by: SortTasksBy) => {
+      setIsSortInFlight(true);
+      sortTasks({ by })
+        .then(() => {
+          showSuccess('Tasks reordered');
+        })
+        .catch(() => {
+          showError('Failed to reorder tasks');
+        })
+        .finally(() => {
+          void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+          setIsSortInFlight(false);
+        });
+    },
+    [queryClient],
+  );
+
   // Group-by change: update state and sync to URL (?group=<option>) so the
   // choice survives page refresh. Default 'none' removes the param entirely.
   const handleGroupByChange = useCallback((newGroupBy: GroupByOption) => {
@@ -717,7 +737,12 @@ function TasksPageContent() {
           <>
             <div className="flex items-center justify-between px-3 border-b border-border">
               <StatusTabs activeTab={activeStatusTab} onTabChange={handleStatusTabChange} />
-              <ViewSettingsButton groupBy={groupBy} onGroupByChange={handleGroupByChange} />
+              <ViewSettingsButton
+                groupBy={groupBy}
+                onGroupByChange={handleGroupByChange}
+                onSort={handleSort}
+                sortDisabled={isSortInFlight}
+              />
             </div>
 
             {/* Filter chips (priority, tags) */}

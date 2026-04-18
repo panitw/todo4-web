@@ -45,7 +45,15 @@ async function proxy(req: NextRequest): Promise<NextResponse> {
   // (e.g. small JSON payloads with Set-Cookie headers on Railway edge).
   const responseBody = await upstream.arrayBuffer();
 
-  return new NextResponse(responseBody, {
+  // Per the Fetch spec null-body statuses (204/205/304) must not carry a
+  // body — the Response constructor throws "Invalid response status code"
+  // if given one, even an empty ArrayBuffer.
+  const isNullBodyStatus =
+    upstream.status === 204 ||
+    upstream.status === 205 ||
+    upstream.status === 304;
+
+  return new NextResponse(isNullBodyStatus ? null : responseBody, {
     status: upstream.status,
     statusText: upstream.statusText,
     headers: upstream.headers,

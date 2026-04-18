@@ -6,11 +6,14 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import type { SortTasksBy } from '@/lib/api/tasks';
 
 export type GroupByOption = 'none' | 'tag' | 'date' | 'priority';
 
@@ -21,12 +24,26 @@ const GROUP_BY_OPTIONS: { value: GroupByOption; label: string }[] = [
   { value: 'priority', label: 'Priority' },
 ];
 
+const SORT_OPTIONS: { value: SortTasksBy; label: string }[] = [
+  { value: 'priority', label: 'Priority' },
+  { value: 'due_date', label: 'Due date' },
+  { value: 'created_newest', label: 'Newest first' },
+  { value: 'created_oldest', label: 'Oldest first' },
+];
+
 interface ViewSettingsButtonProps {
   groupBy: GroupByOption;
   onGroupByChange: (groupBy: GroupByOption) => void;
+  onSort?: (by: SortTasksBy) => void;
+  sortDisabled?: boolean;
 }
 
-export function ViewSettingsButton({ groupBy, onGroupByChange }: ViewSettingsButtonProps) {
+export function ViewSettingsButton({
+  groupBy,
+  onGroupByChange,
+  onSort,
+  sortDisabled,
+}: ViewSettingsButtonProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -49,6 +66,25 @@ export function ViewSettingsButton({ groupBy, onGroupByChange }: ViewSettingsBut
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
+        {onSort && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Sorting
+              </DropdownMenuLabel>
+              {SORT_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  disabled={sortDisabled}
+                  onClick={() => onSort(option.value)}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

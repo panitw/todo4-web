@@ -1,6 +1,6 @@
 # `.well-known/` — Universal Links & App Links hosting
 
-These files enable `https://todo4.com/app/*` URLs to open the native mobile app directly on iOS and Android, instead of the browser.
+These files enable `https://todo4.io/app/*` URLs to open the native mobile app directly on iOS and Android, instead of the browser.
 
 They're static assets served verbatim by Next.js out of `todo-web/public/.well-known/` with no application code in the path. `apple-app-site-association` gets its `Content-Type: application/json` override from `next.config.ts` `headers()`.
 
@@ -43,6 +43,10 @@ Select the `production` (and `preview`) profile and copy the `SHA-256 Fingerprin
 **Story 18.16** — before the first `eas build --profile production --platform ios` and `eas submit --platform android` that relies on App Links / Universal Links to route push-notification tap-throughs to the app.
 
 Until then, these files ship valid JSON with placeholder strings so the hosting pipeline and CI validator pass. The validator (`pnpm validate:well-known`) only checks shape, not value correctness — the review gate for the real values is this README's checklist.
+
+## Rotation log
+
+- **Story 18.16 (2026-04-18):** Apple Team ID populated in `apple-app-site-association` (replaced `REPLACE_WITH_APPLE_TEAM_ID`). Android SHA-256 fingerprints in `assetlinks.json` remain pending `eas credentials --platform android` output — the release engineer must replace both `REPLACE_WITH_*_SHA256_FINGERPRINT` values before the first `eas submit --profile production` and append a dated entry to this log on every subsequent keystore rotation (Android) or Team ID change (iOS).
 
 ## Regression hazards
 

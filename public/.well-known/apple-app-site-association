@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "REPLACE_WITH_APPLE_TEAM_ID.io.todo4.mobile",
+        "appID": "F66ZHPVQ59.io.todo4.mobile",
         "paths": ["/app/*"]
       }
     ]

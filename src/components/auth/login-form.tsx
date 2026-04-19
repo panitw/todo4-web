@@ -24,6 +24,7 @@ function formatRetryAfterMessage(baseMessage: string, apiErr: ApiError): string 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const verifiedParam = searchParams.get('verified');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +33,9 @@ export function LoginForm() {
   const [resendStatus, setResendStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [verifiedEmail, setVerifiedEmail] = useState('');
   const [resendError, setResendError] = useState(false);
+  const [failedResend, setFailedResend] = useState<
+    'idle' | 'sending' | 'sent' | 'error'
+  >('idle');
 
   // OTP login state
   const [authMode, setAuthMode] = useState<'password' | 'email-code'>('email-code');
@@ -103,6 +107,20 @@ export function LoginForm() {
     } catch {
       setResendStatus('idle');
       setResendError(true);
+    }
+  }
+
+  async function handleFailedResend() {
+    if (!email) {
+      setFailedResend('error');
+      return;
+    }
+    setFailedResend('sending');
+    try {
+      await resendVerificationEmail(email);
+      setFailedResend('sent');
+    } catch {
+      setFailedResend('error');
     }
   }
 
@@ -184,6 +202,45 @@ export function LoginForm() {
       {searchParams.get('expired') === 'true' && (
         <div role="status" className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
           Your session has expired — please sign in again.
+        </div>
+      )}
+
+      {verifiedParam === 'true' && (
+        <div
+          role="status"
+          className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300"
+        >
+          Email verified — you can now sign in.
+        </div>
+      )}
+
+      {verifiedParam === 'failed' && (
+        <div
+          role="alert"
+          className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          {failedResend === 'sent' ? (
+            <>Verification email sent. Please check your inbox.</>
+          ) : (
+            <>
+              This verification link is invalid or has expired.{' '}
+              <button
+                type="button"
+                onClick={handleFailedResend}
+                disabled={failedResend === 'sending'}
+                className="underline hover:no-underline disabled:opacity-50"
+              >
+                {failedResend === 'sending'
+                  ? 'Sending...'
+                  : 'Resend verification email'}
+              </button>
+              {failedResend === 'error' && (
+                <span className="ml-1">
+                  {email ? 'Failed to send. Try again.' : 'Enter your email below first.'}
+                </span>
+              )}
+            </>
+          )}
         </div>
       )}
 

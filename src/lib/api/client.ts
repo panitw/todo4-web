@@ -57,9 +57,27 @@ function buildRequestInit(init?: RequestInit): RequestInit {
   };
 }
 
+// Pre-session auth endpoints — 401s from these are real errors (bad credentials,
+// unverified email, etc.), not expired sessions, so skip the refresh-and-redirect flow.
+const PRE_SESSION_AUTH_PATHS = [
+  '/auth/refresh',
+  '/auth/login',
+  '/auth/register',
+  '/auth/register-passwordless',
+  '/auth/resend-verification',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/login-otp-request',
+  '/auth/login-otp-verify',
+  '/auth/code-exchange',
+];
+
+function isPreSessionAuthPath(path: string): boolean {
+  return PRE_SESSION_AUTH_PATHS.some((p) => path.includes(p));
+}
+
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const isRefreshRequest = path.includes('/auth/refresh');
-  const canAttemptRefresh = !isRefreshRequest && !init?.signal?.aborted;
+  const canAttemptRefresh = !isPreSessionAuthPath(path) && !init?.signal?.aborted;
   const requestInit = buildRequestInit(init);
 
   const res = await fetch(path, requestInit);

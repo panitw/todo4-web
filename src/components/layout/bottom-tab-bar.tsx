@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { CheckSquare, Calendar, Link as LinkIcon, Settings } from 'lucide-react';
+import { Calendar, ListTodo, Plug, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const TAB_ITEMS = [
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+  { href: '/tasks', label: 'Tasks', icon: ListTodo },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/connections', label: 'Connections', icon: LinkIcon },
+  { href: '/connections', label: 'Connections', icon: Plug },
   { href: '/settings', label: 'Settings', icon: Settings },
 ] as const;
 
@@ -23,7 +23,7 @@ export function BottomTabBar() {
     <nav
       role="navigation"
       aria-label="Mobile navigation"
-      className="flex items-stretch bg-zinc-950 pb-[env(safe-area-inset-bottom)]"
+      className="flex items-stretch border-t border-zinc-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-zinc-800 dark:bg-zinc-900"
     >
       {TAB_ITEMS.map((item) => {
         const active = isActive(item.href);
@@ -34,24 +34,18 @@ export function BottomTabBar() {
             aria-current={active ? 'page' : undefined}
             className={cn(
               'group/tab relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 py-1 transition-colors',
-              active ? 'text-white' : 'text-zinc-400 hover:text-white',
+              active
+                ? 'text-indigo-600 dark:text-indigo-400'
+                : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100',
             )}
           >
-            {active && (
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-5 top-0 h-0.5 rounded-b-full bg-violet-400"
-              />
-            )}
             <item.icon
               size={22}
-              strokeWidth={active ? 2 : 1.75}
-              className={cn(
-                'transition-colors',
-                active ? 'text-violet-300' : 'text-zinc-500 group-hover/tab:text-zinc-300',
-              )}
+              strokeWidth={active ? 2.25 : 1.75}
+              aria-hidden="true"
+              className="transition-colors"
             />
-            <span className={cn('text-[11px] leading-tight', active && 'font-medium')}>
+            <span className={cn('text-[11px] leading-tight', active && 'font-semibold')}>
               {item.label}
             </span>
           </Link>

@@ -36,10 +36,10 @@ function ScopeBadge({ scope }: { scope: Agent['scope'] }) {
   const isFullAccess = scope === 'full-access'
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
         isFullAccess
-          ? 'bg-primary/10 text-primary'
-          : 'bg-muted text-muted-foreground'
+          ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
+          : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
       }`}
     >
       {isFullAccess ? 'Full access' : 'Read only'}
@@ -52,17 +52,17 @@ function AgentRow({ agent }: { agent: Agent }) {
   const revokeMutation = useRevokeAgent()
 
   return (
-    <li className="flex items-center justify-between border rounded-lg px-4 py-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted">
-          <Bot className="size-4 text-muted-foreground" />
+    <li className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
+          <Bot className="size-[18px]" aria-hidden="true" />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium truncate">{agent.name}</span>
+            <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">{agent.name}</span>
             <ScopeBadge scope={agent.scope} />
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
             {formatRelativeTime(agent.lastActiveAt)}
           </p>
         </div>
@@ -72,9 +72,10 @@ function AgentRow({ agent }: { agent: Agent }) {
         <AlertDialogTrigger
           render={
             <Button
-              variant="destructive"
+              variant="outline"
               size="sm"
               disabled={revokeMutation.isPending}
+              className="shrink-0 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
             />
           }
         >

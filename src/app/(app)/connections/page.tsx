@@ -18,11 +18,11 @@ export default function ConnectionsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-lg px-4 py-8 md:py-12">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-page-title font-semibold">Connections</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+    <div className="mx-auto w-full max-w-lg px-4 py-6 md:py-12">
+      <div className="mb-6 flex items-center justify-between gap-3 md:mb-8">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-zinc-900 md:text-page-title dark:text-zinc-100">Connections</h1>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Manage your connected AI agents
           </p>
         </div>

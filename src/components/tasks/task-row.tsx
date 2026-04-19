@@ -140,7 +140,7 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isB
             className={cn('w-2 h-2 rounded-full shrink-0', priority.dotClass)}
             aria-hidden="true"
           />
-          <span className="text-[10px] font-medium uppercase text-muted-foreground leading-none">
+          <span className="text-[0.625rem] font-medium uppercase text-muted-foreground leading-none">
             {priority.label}
           </span>
         </span>
@@ -164,7 +164,7 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isB
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onTagClick?.(tag); }}
                 className={cn(
-                  'px-1.5 py-0.5 rounded border text-[10px] bg-yellow-50 border-yellow-400 text-yellow-800',
+                  'px-1.5 py-0.5 rounded border text-[0.625rem] bg-yellow-50 border-yellow-400 text-yellow-800',
                   onTagClick ? 'cursor-pointer hover:bg-yellow-100' : 'cursor-default',
                 )}
               >
@@ -178,7 +178,7 @@ export function TaskRow({ task, selected, highlighted, onSelect, onTagClick, isB
         {task.dueDate && (
           <span
             className={cn(
-              'shrink-0 text-[11px] px-1.5 py-0.5 rounded border',
+              'shrink-0 text-[0.6875rem] px-1.5 py-0.5 rounded border',
               overdue
                 ? 'bg-red-50 border-red-300 text-red-700'
                 : 'bg-blue-100 border-blue-200 text-blue-700',

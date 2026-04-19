@@ -50,7 +50,7 @@ export function AttentionBlock({ tasks, onSelectTask }: AttentionBlockProps) {
         <h2 className="text-sm font-semibold text-foreground">
           Needs Attention{' '}
           <span
-            className="inline-flex items-center justify-center ml-1 px-1.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-200 text-amber-800"
+            className="inline-flex items-center justify-center ml-1 px-1.5 py-0.5 rounded-full text-[0.6875rem] font-medium bg-amber-200 text-amber-800"
             aria-live="polite"
           >
             {count}

@@ -63,7 +63,7 @@ function RemovableChip({
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[11px] font-medium shrink-0',
+        'inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[0.6875rem] font-medium shrink-0',
         bg,
         border,
         text,

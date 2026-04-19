@@ -36,7 +36,7 @@ function ScopeBadge({ scope }: { scope: Agent['scope'] }) {
   const isFullAccess = scope === 'full-access'
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.6875rem] font-medium ${
         isFullAccess
           ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
           : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'

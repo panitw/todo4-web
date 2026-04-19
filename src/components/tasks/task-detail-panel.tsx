@@ -276,7 +276,7 @@ function PrioritySelect({ task }: { task: Task }) {
 function MetaField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1.5">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">
+      <span className="text-[0.625rem] font-semibold uppercase tracking-[0.1em] text-zinc-500">
         {label}
       </span>
       <div className="min-w-0">{children}</div>
@@ -298,7 +298,7 @@ function MetaCard({ task }: { task: Task }) {
           </MetaField>
         </div>
       </div>
-      <p className="px-1 text-[11px] text-muted-foreground">
+      <p className="px-1 text-[0.6875rem] text-muted-foreground">
         Created{' '}
         <time dateTime={task.createdAt} title={createdFull} className="text-foreground/70">
           {formatShortDate(task.createdAt)}
@@ -508,7 +508,7 @@ function HistoryEntry({ entry }: { entry: TaskHistory }) {
       <time
         dateTime={createdAt.toISOString()}
         title={absolute}
-        className="shrink-0 whitespace-nowrap text-[11px] text-muted-foreground"
+        className="shrink-0 whitespace-nowrap text-[0.6875rem] text-muted-foreground"
       >
         {relative}
       </time>

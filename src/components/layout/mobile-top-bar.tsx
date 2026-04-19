@@ -61,7 +61,7 @@ export function MobileTopBar() {
           }}
           placeholder="Search tasks..."
           aria-label="Search tasks"
-          className="h-9 flex-1 bg-transparent px-2 text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+          className="h-9 flex-1 bg-transparent px-2 text-[0.9375rem] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
         />
         {query && (
           <button
@@ -80,7 +80,7 @@ export function MobileTopBar() {
   return (
     <header className="flex items-center justify-between gap-2 border-b border-zinc-200 bg-white px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-zinc-800 dark:bg-zinc-900">
       <h1
-        className="min-w-0 flex-1 truncate text-[20px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100"
+        className="min-w-0 flex-1 truncate text-[1.25rem] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100"
         suppressHydrationWarning
       >
         {pageTitle}

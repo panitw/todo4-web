@@ -45,7 +45,7 @@ export function BottomTabBar() {
               aria-hidden="true"
               className="transition-colors"
             />
-            <span className={cn('text-[11px] leading-tight', active && 'font-semibold')}>
+            <span className={cn('text-[0.6875rem] leading-tight', active && 'font-semibold')}>
               {item.label}
             </span>
           </Link>

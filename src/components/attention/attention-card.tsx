@@ -16,7 +16,7 @@ import { useUpdateTask } from '@/hooks/use-update-task';
 
 function AgentStatusPip({ agentName }: { agentName: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-teal-700">
+    <span className="inline-flex items-center gap-1 text-[0.6875rem] text-teal-700">
       <Bot className="h-3 w-3" aria-hidden="true" />
       <span>{agentName}</span>
     </span>
@@ -168,7 +168,7 @@ export function AttentionCard({ task, onSelectTask, disabled }: AttentionCardPro
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="text-[15px] font-medium text-foreground hover:underline truncate text-left"
+              className="text-[0.9375rem] font-medium text-foreground hover:underline truncate text-left"
               onClick={() => onSelectTask(task.id)}
             >
               {task.title}
@@ -177,7 +177,7 @@ export function AttentionCard({ task, onSelectTask, disabled }: AttentionCardPro
           </div>
 
           {/* Agent reasoning / question */}
-          <p className="text-[14px] italic text-muted-foreground mt-1">
+          <p className="text-[0.875rem] italic text-muted-foreground mt-1">
             {secondaryText}
           </p>
         </div>

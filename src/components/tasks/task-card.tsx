@@ -82,7 +82,7 @@ function HighlightedText({ text, query }: { text: string; query?: string }) {
 
 function AgentStatusPip({ agentName }: { agentName: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] text-teal-700">
+    <span className="inline-flex items-center gap-1 text-[0.6875rem] text-teal-700">
       <Bot className="h-3 w-3" aria-hidden="true" />
       <span>{agentName}</span>
     </span>
@@ -252,13 +252,13 @@ export function TaskCard({
                   onBlur={handleTitleBlur}
                   onFocus={() => setEditTitle(task.title)}
                   autoFocus
-                  className="flex-1 min-w-0 text-[15px] font-medium bg-transparent border-b border-indigo-500 outline-none px-0 py-0"
+                  className="flex-1 min-w-0 text-[0.9375rem] font-medium bg-transparent border-b border-indigo-500 outline-none px-0 py-0"
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 <span
                   className={cn(
-                    'flex-1 min-w-0 truncate text-[15px]',
+                    'flex-1 min-w-0 truncate text-[0.9375rem]',
                     inProgress ? 'font-semibold' : 'font-medium',
                     completed && 'line-through text-muted-foreground',
                   )}
@@ -339,7 +339,7 @@ export function TaskCard({
                   type="button"
                   onClick={(e) => { e.stopPropagation(); onTagClick?.(tag); }}
                   className={cn(
-                    'rounded-full px-2 py-0.5 text-[11px] font-medium text-zinc-600 bg-zinc-100/70',
+                    'rounded-full px-2 py-0.5 text-[0.6875rem] font-medium text-zinc-600 bg-zinc-100/70',
                     onTagClick ? 'cursor-pointer hover:bg-zinc-200 hover:text-zinc-800' : 'cursor-default',
                   )}
                 >
@@ -352,7 +352,7 @@ export function TaskCard({
           {/* Status pill */}
           <span
             className={cn(
-              'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium',
+              'inline-flex items-center rounded-full px-2 py-0.5 text-[0.6875rem] font-medium',
               statusPill.bg,
               statusPill.text,
             )}
@@ -364,7 +364,7 @@ export function TaskCard({
           {task.dueDate && (
             <span
               className={cn(
-                'inline-flex items-center gap-1 text-[11px] font-medium',
+                'inline-flex items-center gap-1 text-[0.6875rem] font-medium',
                 overdue ? 'text-red-600' : 'text-muted-foreground',
               )}
             >
@@ -374,7 +374,7 @@ export function TaskCard({
           )}
 
           {/* Priority dot + label */}
-          <span className={cn('inline-flex items-center gap-1 text-[11px] font-medium', priority.textClass)}>
+          <span className={cn('inline-flex items-center gap-1 text-[0.6875rem] font-medium', priority.textClass)}>
             <span
               className={cn('size-1.5 shrink-0 rounded-full', priority.dotClass)}
               aria-hidden="true"

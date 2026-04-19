@@ -67,7 +67,7 @@ function ChipButton({
       type="button"
       onClick={onClick}
       className={cn(
-        'px-2 py-0.5 rounded border text-[11px] uppercase font-medium transition-colors',
+        'px-2 py-0.5 rounded border text-[0.6875rem] uppercase font-medium transition-colors',
         active
           ? 'bg-indigo-50 border-indigo-400 text-indigo-700'
           : 'bg-muted border-border text-muted-foreground hover:border-indigo-300',
@@ -130,7 +130,7 @@ export function FilterChipBar({ filters, onChange, availableTags }: FilterChipBa
               key={tag}
               type="button"
               onClick={() => onChange({ ...filters, tags: filters.tags.filter((t) => t !== tag) })}
-              className="px-2 py-0.5 rounded border text-[11px] bg-teal-50 border-teal-400 text-teal-700 flex items-center gap-1"
+              className="px-2 py-0.5 rounded border text-[0.6875rem] bg-teal-50 border-teal-400 text-teal-700 flex items-center gap-1"
             >
               {tag} <span aria-hidden="true">✕</span>
             </button>
@@ -141,7 +141,7 @@ export function FilterChipBar({ filters, onChange, availableTags }: FilterChipBa
       {/* Tag selector dropdown — using native select for MVP simplicity */}
       {availableTags && availableTags.length > 0 && (
         <select
-          className="text-[11px] border border-border rounded px-1 py-0.5 bg-muted text-muted-foreground"
+          className="text-[0.6875rem] border border-border rounded px-1 py-0.5 bg-muted text-muted-foreground"
           value=""
           onChange={(e) => {
             const tag = e.target.value;
@@ -163,22 +163,22 @@ export function FilterChipBar({ filters, onChange, availableTags }: FilterChipBa
 
       {/* Due date range */}
       <span className="w-px h-4 bg-border mx-0.5" aria-hidden="true" />
-      <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+      <label className="text-[0.6875rem] text-muted-foreground flex items-center gap-1">
         From
         <input
           type="date"
           value={filters.dueAfter}
           onChange={(e) => onChange({ ...filters, dueAfter: e.target.value })}
-          className="text-[11px] border border-border rounded px-1 py-0.5 bg-background"
+          className="text-[0.6875rem] border border-border rounded px-1 py-0.5 bg-background"
         />
       </label>
-      <label className="text-[11px] text-muted-foreground flex items-center gap-1">
+      <label className="text-[0.6875rem] text-muted-foreground flex items-center gap-1">
         To
         <input
           type="date"
           value={filters.dueBefore}
           onChange={(e) => onChange({ ...filters, dueBefore: e.target.value })}
-          className="text-[11px] border border-border rounded px-1 py-0.5 bg-background"
+          className="text-[0.6875rem] border border-border rounded px-1 py-0.5 bg-background"
         />
       </label>
 
@@ -186,7 +186,7 @@ export function FilterChipBar({ filters, onChange, availableTags }: FilterChipBa
         <button
           type="button"
           onClick={clearFilters}
-          className="ml-1 text-[11px] text-muted-foreground underline hover:text-foreground"
+          className="ml-1 text-[0.6875rem] text-muted-foreground underline hover:text-foreground"
         >
           Clear filters
         </button>

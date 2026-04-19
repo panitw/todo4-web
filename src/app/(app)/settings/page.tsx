@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { showError, showSuccess, showInfo } from '@/lib/toast';
 import {
+  ArrowLeft,
   Bell,
   ChevronRight,
   Download,
@@ -109,31 +110,18 @@ function SettingsNav({
   );
 }
 
-function MobileSettingsNav({
-  active,
-  onChange,
-}: {
-  active: Section;
-  onChange: (s: Section) => void;
-}) {
+function MobileSettingsNav({ onSelect }: { onSelect: (s: Section) => void }) {
   return (
-    <nav aria-label="Settings sections" className="px-4 pb-2 pt-4">
-      <h1 className="mb-3 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Settings</h1>
+    <nav aria-label="Settings sections" className="px-4 pb-4 pt-4">
       <ul className="space-y-2">
         {NAV_ITEMS.map((item) => {
-          const isActive = active === item.key;
           const Icon = item.icon;
           return (
             <li key={item.key}>
               <button
                 type="button"
-                onClick={() => onChange(item.key)}
-                aria-current={isActive ? 'true' : undefined}
-                className={`group/row flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors ${
-                  isActive
-                    ? 'border-indigo-200 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/40'
-                    : 'border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/50'
-                }`}
+                onClick={() => onSelect(item.key)}
+                className="group/row flex w-full items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-3 text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/50"
               >
                 <span
                   aria-hidden="true"
@@ -159,6 +147,30 @@ function MobileSettingsNav({
         })}
       </ul>
     </nav>
+  );
+}
+
+function MobileDetailHeader({
+  label,
+  onBack,
+}: {
+  label: string;
+  onBack: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 border-b border-zinc-200 px-2 py-2 dark:border-zinc-800">
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label="Back to settings"
+        className="flex size-9 items-center justify-center rounded-lg text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+      >
+        <ArrowLeft className="size-5" />
+      </button>
+      <span className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -974,37 +986,89 @@ function EmailChangedToast() {
   return null;
 }
 
-export default function SettingsPage() {
-  const [activeSection, setActiveSection] = useState<Section>('profile');
+function isSection(value: string | null): value is Section {
+  return (
+    value === 'profile' ||
+    value === 'security' ||
+    value === 'notifications' ||
+    value === 'export' ||
+    value === 'account'
+  );
+}
+
+function SettingsBody() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const sectionParam = searchParams.get('section');
+  const urlSection: Section | null = isSection(sectionParam) ? sectionParam : null;
+
+  // Desktop always shows a section (defaults to profile). Mobile uses
+  // `urlSection === null` to mean "show the level-1 list".
+  const desktopSection: Section = urlSection ?? 'profile';
 
   const { data: profile } = useQuery<UserProfile>({
     queryKey: ['profile'],
     queryFn: getProfile,
   });
 
-  function renderSection() {
-    if (activeSection === 'profile') return <ProfileSection key={profile?.id} profile={profile} />;
-    if (activeSection === 'security') return <SecuritySection profile={profile} />;
-    if (activeSection === 'notifications') return <NotificationsSection />;
-    if (activeSection === 'export') return <ExportSection />;
+  function navigateToSection(s: Section) {
+    router.push(`/settings?section=${s}`, { scroll: false });
+  }
+
+  function backToList() {
+    router.push('/settings', { scroll: false });
+  }
+
+  function renderSection(s: Section) {
+    if (s === 'profile') return <ProfileSection key={profile?.id} profile={profile} />;
+    if (s === 'security') return <SecuritySection profile={profile} />;
+    if (s === 'notifications') return <NotificationsSection />;
+    if (s === 'export') return <ExportSection />;
     return <AccountSection profile={profile} />;
   }
 
+  const detailLabel =
+    urlSection !== null
+      ? NAV_ITEMS.find((i) => i.key === urlSection)?.label ?? 'Settings'
+      : 'Settings';
+
   return (
     <div className="flex h-full">
-      <Suspense>
-        <EmailChangedToast />
-      </Suspense>
+      {/* Desktop sidebar — sections selectable via URL */}
       <aside className="hidden md:block w-56 shrink-0 border-r border-border">
-        <SettingsNav active={activeSection} onChange={setActiveSection} />
+        <SettingsNav active={desktopSection} onChange={navigateToSection} />
       </aside>
+
       <div className="flex-1 overflow-y-auto">
-        {/* Mobile settings nav — icon + chevron list to match mobile app */}
-        <div className="md:hidden border-b border-border">
-          <MobileSettingsNav active={activeSection} onChange={setActiveSection} />
+        {/* Mobile level-1 list — visible only when no section is selected */}
+        {urlSection === null && (
+          <div className="md:hidden">
+            <MobileSettingsNav onSelect={navigateToSection} />
+          </div>
+        )}
+
+        {/* Mobile level-2 detail header — visible when a section is selected */}
+        {urlSection !== null && (
+          <div className="md:hidden">
+            <MobileDetailHeader label={detailLabel} onBack={backToList} />
+          </div>
+        )}
+
+        {/* Section content — always shown on desktop; on mobile only when a
+            section is selected (controlled via responsive visibility classes) */}
+        <div className={urlSection === null ? 'hidden md:block' : ''}>
+          {renderSection(desktopSection)}
         </div>
-        {renderSection()}
       </div>
     </div>
+  );
+}
+
+export default function SettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <EmailChangedToast />
+      <SettingsBody />
+    </Suspense>
   );
 }

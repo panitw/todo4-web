@@ -169,6 +169,19 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
   }
+  /* iOS Dynamic Type — tie the root font-size to the system Text Size
+     setting (Settings > Display & Brightness > Text Size). The
+     `-apple-system-body` shorthand is a WebKit-only value; other
+     engines ignore it as an invalid font shorthand, so it has no
+     effect on Chrome/Firefox/Edge. We re-apply our brand font-family
+     and -weight after, since the shorthand also sets those. */
+  @supports (font: -apple-system-body) {
+    html {
+      font: -apple-system-body;
+      font-family: var(--font-sans);
+      font-weight: 400;
+    }
+  }
   /* Prevent iOS Safari from auto-zooming on input focus (triggered when font-size < 16px) */
   @media screen and (max-width: 767px) {
     input, select, textarea {

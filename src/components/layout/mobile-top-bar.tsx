@@ -29,12 +29,12 @@ export function MobileTopBar() {
 
   if (searchMode) {
     return (
-      <header className="flex items-center gap-1 bg-zinc-950 px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
+      <header className="flex items-center gap-1 border-b border-zinc-200 bg-white px-3 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-zinc-800 dark:bg-zinc-900">
         <button
           type="button"
           onClick={exitSearch}
           aria-label="Cancel search"
-          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
           <ArrowLeft size={20} />
         </button>
@@ -48,14 +48,14 @@ export function MobileTopBar() {
           }}
           placeholder="Search tasks..."
           aria-label="Search tasks"
-          className="h-9 flex-1 bg-transparent px-2 text-[15px] text-white outline-none placeholder:text-zinc-500"
+          className="h-9 flex-1 bg-transparent px-2 text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 dark:placeholder:text-zinc-500"
         />
         {query && (
           <button
             type="button"
             onClick={() => setQuery('')}
             aria-label="Clear search"
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <X size={18} />
           </button>
@@ -65,9 +65,9 @@ export function MobileTopBar() {
   }
 
   return (
-    <header className="flex items-center justify-between bg-zinc-950 px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))]">
+    <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-zinc-800 dark:bg-zinc-900">
       <Link href="/tasks" className="flex items-center gap-2.5" aria-label="todo4 home">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#FAFAF7] shadow-[0_6px_20px_-4px_rgba(139,92,246,0.55),0_0_0_1px_rgba(255,255,255,0.08)]">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#FAFAF7] shadow-[0_2px_8px_-2px_rgba(79,70,229,0.25),0_0_0_1px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_-2px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.06)]">
           <Image
             src="/todo4-logo.png"
             alt=""
@@ -79,7 +79,7 @@ export function MobileTopBar() {
             priority
           />
         </div>
-        <span className="text-[17px] font-semibold tracking-tight text-white">
+        <span className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           todo4
         </span>
       </Link>
@@ -89,7 +89,7 @@ export function MobileTopBar() {
             type="button"
             onClick={() => setSearchModeRequested(true)}
             aria-label="Search tasks"
-            className="flex size-9 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <Search size={20} />
           </button>
@@ -103,7 +103,7 @@ export function MobileTopBar() {
               e.currentTarget.click();
             }
           }}
-          className="relative flex size-9 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+          className="relative flex size-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
           <Bell size={20} aria-hidden="true" />
           {unreadCount > 0 && (

@@ -4,6 +4,15 @@ import { Suspense, useState, useRef, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { showError, showSuccess, showInfo } from '@/lib/toast';
+import {
+  Bell,
+  ChevronRight,
+  Download,
+  Lock,
+  ShieldAlert,
+  User,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +65,21 @@ interface ApiError extends Error {
 // Settings left nav
 // ──────────────────────────────────────────────────────────────────────────────
 
+interface NavItem {
+  key: Section;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { key: 'profile', label: 'Profile', description: 'Name, email, timezone', icon: User },
+  { key: 'security', label: 'Security', description: 'Password and connected accounts', icon: Lock },
+  { key: 'notifications', label: 'Notifications', description: 'Email, webhooks, calendar sync', icon: Bell },
+  { key: 'export', label: 'Export data', description: 'Download your data as CSV or JSON', icon: Download },
+  { key: 'account', label: 'Account', description: 'Log out or delete your account', icon: ShieldAlert },
+];
+
 function SettingsNav({
   active,
   onChange,
@@ -63,20 +87,12 @@ function SettingsNav({
   active: Section;
   onChange: (s: Section) => void;
 }) {
-  const items: { key: Section; label: string }[] = [
-    { key: 'profile', label: 'Profile' },
-    { key: 'security', label: 'Security' },
-    { key: 'notifications', label: 'Notifications' },
-    { key: 'export', label: 'Export data' },
-    { key: 'account', label: 'Account' },
-  ];
-
   return (
     <nav className="p-4 space-y-1">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
         Settings
       </p>
-      {items.map((item) => (
+      {NAV_ITEMS.map((item) => (
         <button
           key={item.key}
           onClick={() => onChange(item.key)}
@@ -89,6 +105,59 @@ function SettingsNav({
           {item.label}
         </button>
       ))}
+    </nav>
+  );
+}
+
+function MobileSettingsNav({
+  active,
+  onChange,
+}: {
+  active: Section;
+  onChange: (s: Section) => void;
+}) {
+  return (
+    <nav aria-label="Settings sections" className="px-4 pb-2 pt-4">
+      <h1 className="mb-3 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Settings</h1>
+      <ul className="space-y-2">
+        {NAV_ITEMS.map((item) => {
+          const isActive = active === item.key;
+          const Icon = item.icon;
+          return (
+            <li key={item.key}>
+              <button
+                type="button"
+                onClick={() => onChange(item.key)}
+                aria-current={isActive ? 'true' : undefined}
+                className={`group/row flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-colors ${
+                  isActive
+                    ? 'border-indigo-200 bg-indigo-50/60 dark:border-indigo-900 dark:bg-indigo-950/40'
+                    : 'border-zinc-200 bg-white hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/50'
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300"
+                >
+                  <Icon className="size-[18px]" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                    {item.label}
+                  </span>
+                  <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+                    {item.description}
+                  </span>
+                </span>
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }
@@ -930,9 +999,9 @@ export default function SettingsPage() {
         <SettingsNav active={activeSection} onChange={setActiveSection} />
       </aside>
       <div className="flex-1 overflow-y-auto">
-        {/* Mobile settings nav */}
+        {/* Mobile settings nav — icon + chevron list to match mobile app */}
         <div className="md:hidden border-b border-border">
-          <SettingsNav active={activeSection} onChange={setActiveSection} />
+          <MobileSettingsNav active={activeSection} onChange={setActiveSection} />
         </div>
         {renderSection()}
       </div>

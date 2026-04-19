@@ -201,7 +201,7 @@ export default function CalendarPage() {
 
         {/* Task list for selected date */}
         <div className="mt-6">
-          <h3 className="text-sm font-medium text-muted-foreground mb-3">
+          <h3 className="mb-3 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             {selectedDate.toLocaleDateString('en-US', {
               weekday: 'long',
               month: 'long',
@@ -209,7 +209,7 @@ export default function CalendarPage() {
             })}
           </h3>
           {tasksForDate.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">
+            <p className="py-4 text-sm text-zinc-500 dark:text-zinc-400">
               No tasks due on this date
             </p>
           ) : (

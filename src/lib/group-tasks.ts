@@ -26,15 +26,17 @@ const PRIORITY_GROUP_CONFIG: Record<string, { label: string; colorClass: string 
 };
 
 function parseDateLocal(dateStr: string): Date {
-  // Accept both YYYY-MM-DD and full ISO 8601 (e.g. "2026-04-10T00:00:00.000Z").
-  // Extract the leading YYYY-MM-DD portion and parse as local time to avoid
-  // UTC off-by-one errors.
-  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (match) {
-    return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  // Date-only strings (YYYY-MM-DD) are interpreted as that local calendar day.
+  // Full ISO timestamps (YYYY-MM-DDThh:mm...) go through `new Date` so the
+  // UTC instant lands on the correct local calendar day — otherwise a task
+  // due 2026-04-20T00:00 Bangkok (= 2026-04-19T17:00Z) would group under the
+  // UTC prefix (Apr 19) instead of the user's local day (Apr 20).
+  const dateOnly = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dateOnly) {
+    return new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]));
   }
-  // Fallback: let Date parse it and pull the local date components.
   const parsed = new Date(dateStr);
+  if (Number.isNaN(parsed.getTime())) return parsed;
   return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 

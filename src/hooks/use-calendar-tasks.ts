@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTasks } from './use-tasks';
 import { toDateKey } from '@/components/calendar/calendar-grid';
+import { toLocalDateKey } from '@/lib/date';
 
 /**
  * Fetches tasks for a given month and derives:
@@ -34,9 +35,7 @@ export function useCalendarTasks(year: number, month: number, selectedDate: Date
     const set = new Set<string>();
     for (const task of tasks) {
       if (task.dueDate) {
-        // task.dueDate is ISO 8601 string like "2026-03-15" or "2026-03-15T00:00:00.000Z"
-        const dateKey = task.dueDate.slice(0, 10);
-        set.add(dateKey);
+        set.add(toLocalDateKey(task.dueDate));
       }
     }
     return set;
@@ -45,7 +44,7 @@ export function useCalendarTasks(year: number, month: number, selectedDate: Date
   // Filter tasks for selected date
   const selectedDateKey = toDateKey(selectedDate);
   const tasksForDate = useMemo(
-    () => tasks.filter((t) => t.dueDate && t.dueDate.slice(0, 10) === selectedDateKey),
+    () => tasks.filter((t) => t.dueDate && toLocalDateKey(t.dueDate) === selectedDateKey),
     [tasks, selectedDateKey],
   );
 

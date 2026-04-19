@@ -200,6 +200,25 @@
   outline-offset: 2px;
 }
 
+/* === Landing page nebula float === */
+@keyframes nebulaFloat {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-10px) rotate(1deg); }
+}
+.animate-nebula-float { animation: nebulaFloat 8s ease-in-out infinite; }
+
+/* === Pricing popup === */
+@keyframes pricingFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes pricingPopIn {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-pricing-fade-in { animation: pricingFadeIn 240ms ease; }
+.animate-pricing-pop-in  { animation: pricingPopIn 340ms cubic-bezier(0.2, 0.9, 0.3, 1.05); }
+
 /* === Reduced Motion (UX-DR15) === */
 /* Disable decorative motion but preserve functional animations (loading spinners) */
 @media (prefers-reduced-motion: reduce) {

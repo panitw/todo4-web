@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { ArrowLeft, Bell, Search, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useUnreadCount } from '@/hooks/use-notifications';
@@ -10,12 +10,25 @@ import { UserMenu } from '@/components/layout/user-menu';
 import { useSearch } from '@/providers/search-provider';
 import { getProfile } from '@/lib/api/users';
 
+function getPageTitle(pathname: string | null): string {
+  if (!pathname) return 'todo4';
+  if (pathname === '/tasks' || pathname.startsWith('/tasks/')) return 'Tasks';
+  if (pathname === '/calendar' || pathname.startsWith('/calendar/')) return 'Calendar';
+  if (pathname.startsWith('/connections')) return 'Connections';
+  if (pathname.startsWith('/settings')) return 'Settings';
+  if (pathname.startsWith('/notifications')) return 'Notifications';
+  if (pathname.startsWith('/task/')) return 'Task';
+  return 'todo4';
+}
+
 export function MobileTopBar() {
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile });
   const { query, setQuery, active: searchActive } = useSearch();
   const [searchModeRequested, setSearchModeRequested] = useState(false);
+  const pathname = usePathname();
+  const pageTitle = getPageTitle(pathname);
 
   // Derive visibility from the request + whether a searchable page is mounted.
   // When the user navigates away from /tasks mid-search, searchActive flips
@@ -65,24 +78,13 @@ export function MobileTopBar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-zinc-800 dark:bg-zinc-900">
-      <Link href="/tasks" className="flex items-center gap-2.5" aria-label="todo4 home">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#FAFAF7] shadow-[0_2px_8px_-2px_rgba(79,70,229,0.25),0_0_0_1px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_-2px_rgba(99,102,241,0.4),0_0_0_1px_rgba(255,255,255,0.06)]">
-          <Image
-            src="/todo4-logo.png"
-            alt=""
-            aria-hidden="true"
-            width={28}
-            height={28}
-            className="size-7"
-            unoptimized
-            priority
-          />
-        </div>
-        <span className="text-[17px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-          todo4
-        </span>
-      </Link>
+    <header className="flex items-center justify-between gap-2 border-b border-zinc-200 bg-white px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] dark:border-zinc-800 dark:bg-zinc-900">
+      <h1
+        className="min-w-0 flex-1 truncate text-[20px] font-semibold tracking-tight text-zinc-900 dark:text-zinc-100"
+        suppressHydrationWarning
+      >
+        {pageTitle}
+      </h1>
       <div className="flex items-center gap-1">
         {searchActive && (
           <button

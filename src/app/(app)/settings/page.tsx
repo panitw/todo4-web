@@ -118,7 +118,6 @@ function MobileSettingsNav({
 }) {
   return (
     <nav aria-label="Settings sections" className="px-4 pb-2 pt-4">
-      <h1 className="mb-3 text-xl font-semibold text-zinc-900 dark:text-zinc-100">Settings</h1>
       <ul className="space-y-2">
         {NAV_ITEMS.map((item) => {
           const isActive = active === item.key;

@@ -17,8 +17,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check for the httpOnly access_token cookie set by the API on login
-  const hasSession = request.cookies.has('access_token');
+  // Allow through if either cookie is present; if only refresh_token remains,
+  // the client's apiFetch will silently refresh on the first 401.
+  const hasSession =
+    request.cookies.has('access_token') || request.cookies.has('refresh_token');
 
   if (!hasSession) {
     const loginUrl = request.nextUrl.clone();

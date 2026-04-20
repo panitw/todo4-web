@@ -6,5 +6,7 @@ export function useSubtasks(taskId: string) {
     queryKey: ['subtasks', taskId],
     queryFn: () => listSubtasks(taskId),
     enabled: !!taskId,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000,
   });
 }

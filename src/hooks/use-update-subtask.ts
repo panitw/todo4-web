@@ -13,6 +13,10 @@ export function useUpdateSubtask(taskId: string) {
     }) => updateSubtask(taskId, subtaskId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subtasks', taskId] });
+      // Keep subtaskCount / completedSubtaskCount badges on list + detail
+      // views in sync after toggling a subtask from the inline card view.
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] });
     },
   });
 }

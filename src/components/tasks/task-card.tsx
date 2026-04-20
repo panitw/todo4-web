@@ -2,7 +2,13 @@
 
 import React, { useState } from 'react';
 import { showError, showSuccess } from '@/lib/toast';
-import { MoreVertical, Calendar, Bot, Check as CheckIcon } from 'lucide-react';
+import {
+  MoreVertical,
+  Calendar,
+  Bot,
+  Check as CheckIcon,
+  ChevronDown,
+} from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
@@ -30,6 +36,7 @@ import { useAgents } from '@/hooks/use-agents';
 import { CloseTaskDialog } from './close-task-dialog';
 import { AgentProvenanceBadge } from '@/components/shared/agent-provenance-badge';
 import { STATUS_PILL_CONFIG } from './task-shared';
+import { SubtaskInlineList } from './subtask-inline-list';
 
 // --- Constants ---
 
@@ -143,6 +150,13 @@ export function TaskCard({
   const [isCloseDialogOpen, setIsCloseDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
+  const [isSubtasksExpanded, setIsSubtasksExpanded] = useState(false);
+
+  const subtaskCount = task.subtaskCount ?? 0;
+  const completedSubtaskCount = task.completedSubtaskCount ?? 0;
+  const hasSubtasks = subtaskCount > 0;
+  const subtasksReadOnly =
+    task.status === 'closed' || task.status === 'archived';
 
   const { mutate: archiveMutate } = useArchiveTask();
   const { mutate: restoreMutate } = useRestoreTask();
@@ -272,6 +286,37 @@ export function TaskCard({
                 <AgentStatusPip agentName="Agent" />
               )}
 
+              {/* Subtask expand toggle — only shown when task has subtasks */}
+              {hasSubtasks && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSubtasksExpanded((v) => !v);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  aria-expanded={isSubtasksExpanded}
+                  aria-controls={`task-${task.id}-subtasks`}
+                  aria-label={
+                    isSubtasksExpanded
+                      ? `Hide subtasks (${completedSubtaskCount}/${subtaskCount})`
+                      : `Show subtasks (${completedSubtaskCount}/${subtaskCount})`
+                  }
+                  className="shrink-0 inline-flex items-center gap-1 rounded px-1 py-0.5 text-[0.6875rem] text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <span className="tabular-nums">
+                    {completedSubtaskCount}/{subtaskCount}
+                  </span>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={cn(
+                      'h-4 w-4 transition-transform',
+                      isSubtasksExpanded && 'rotate-180',
+                    )}
+                  />
+                </button>
+              )}
+
               {/* More menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -390,6 +435,23 @@ export function TaskCard({
               />
             )}
             </div>
+
+            {/* Inline subtask list — rendered when expanded */}
+            {hasSubtasks && isSubtasksExpanded && (
+              <div
+                id={`task-${task.id}-subtasks`}
+                role="group"
+                aria-label="Subtasks"
+                className="mt-2 pl-0.5"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <SubtaskInlineList
+                  taskId={task.id}
+                  readOnly={subtasksReadOnly}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

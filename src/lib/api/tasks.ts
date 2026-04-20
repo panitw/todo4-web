@@ -41,6 +41,8 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   tags?: string[];
+  subtaskCount?: number;
+  completedSubtaskCount?: number;
 }
 
 export interface TaskListMeta {

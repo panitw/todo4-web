@@ -8,6 +8,7 @@ import { Bell, Plus, Search } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useUnreadCount } from '@/hooks/use-notifications';
 import { useTaskEvents } from '@/hooks/use-task-events';
+import { useSyncDeviceTimezone } from '@/hooks/use-sync-device-timezone';
 import { MobileTopBar } from '@/components/layout/mobile-top-bar';
 import { UserMenu } from '@/components/layout/user-menu';
 import { CommandPalette } from '@/components/command-palette';
@@ -38,6 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.count ?? 0;
   const { data: profile } = useQuery({ queryKey: ['profile'], queryFn: getProfile });
+  useSyncDeviceTimezone(profile);
   const consentStale = !!profile
     && profile.deletionScheduledAt === null
     && (

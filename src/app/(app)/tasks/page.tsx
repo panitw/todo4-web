@@ -310,11 +310,17 @@ export default function TasksPage() {
 }
 
 const VALID_GROUP_BY_OPTIONS: readonly GroupByOption[] = ['none', 'tag', 'date', 'priority'];
+const GROUP_BY_STORAGE_KEY = 'todo-web:tasks:groupBy';
 
-function parseGroupByParam(value: string | null): GroupByOption {
-  return (VALID_GROUP_BY_OPTIONS as readonly string[]).includes(value ?? '')
-    ? (value as GroupByOption)
-    : 'none';
+function readStoredGroupBy(): GroupByOption | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(GROUP_BY_STORAGE_KEY);
+    if (!raw) return null;
+    return (VALID_GROUP_BY_OPTIONS as readonly string[]).includes(raw) ? (raw as GroupByOption) : null;
+  } catch {
+    return null;
+  }
 }
 
 function TasksPageContent() {
@@ -325,9 +331,20 @@ function TasksPageContent() {
     status: ['open', 'in_progress'],
   });
   const [searchQuery, setSearchQuery] = useState('');
-  const [groupBy, setGroupBy] = useState<GroupByOption>(() =>
-    parseGroupByParam(searchParams.get('group')),
-  );
+  const [groupBy, setGroupBy] = useState<GroupByOption>('none');
+  // Hydrate groupBy from localStorage post-mount (kept out of the useState
+  // initializer to avoid SSR/client hydration mismatches). Also strips any
+  // legacy ?group= param from the URL so the two never disagree.
+  useEffect(() => {
+    const stored = readStoredGroupBy();
+    if (stored && stored !== 'none') setGroupBy(stored);
+    if (window.location.search.includes('group=')) {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('group');
+      const qs = params.toString();
+      window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+    }
+  }, []);
   const [activeStatusTab, setActiveStatusTab] = useState<string | null>('active');
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
   const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
@@ -416,18 +433,13 @@ function TasksPageContent() {
     [queryClient],
   );
 
-  // Group-by change: update state and sync to URL (?group=<option>) so the
-  // choice survives page refresh. Default 'none' removes the param entirely.
   const handleGroupByChange = useCallback((newGroupBy: GroupByOption) => {
     setGroupBy(newGroupBy);
-    const params = new URLSearchParams(window.location.search);
-    if (newGroupBy === 'none') {
-      params.delete('group');
-    } else {
-      params.set('group', newGroupBy);
+    try {
+      window.localStorage.setItem(GROUP_BY_STORAGE_KEY, newGroupBy);
+    } catch {
+      // ignore quota / disabled-storage errors
     }
-    const qs = params.toString();
-    window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
   }, []);
 
   const { data, isPending } = useTasks({
